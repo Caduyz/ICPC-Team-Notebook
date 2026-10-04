@@ -1,0 +1,215 @@
+\section{Arrays}
+
+\subsection{Prefix Sum 2D}
+
+Permite consultar a soma de qualquer submatriz em $O(1)$ após
+pré-processamento.
+
+\textbf{Pré-processamento:} $O(NM)$.
+
+\textbf{Consulta:} $O(1)$.
+
+\[
+prefix[i][j]
+=
+a[i][j]
++prefix[i-1][j]
++prefix[i][j-1]
+-prefix[i-1][j-1]
+\]
+
+Para a submatriz $(r_1,c_1)$ até $(r_2,c_2)$:
+
+\[
+sum =
+prefix[r_2][c_2]
+-prefix[r_1-1][c_2]
+-prefix[r_2][c_1-1]
++prefix[r_1-1][c_1-1]
+\]
+
+Usando índices de $1$ a $N,M$:
+
+\begin{lstlisting}
+for (int i = 1; i <= n; i++)
+    for (int j = 1; j <= m; j++)
+        prefix[i][j] = a[i][j] + prefix[i-1][j] + prefix[i][j-1] - prefix[i-1][j-1];
+
+int sum = prefix[r2][c2] - prefix[r1-1][c2] - prefix[r2][c1-1] + prefix[r1-1][c1-1];
+\end{lstlisting}
+
+
+\subsection{Array de Diferenças 2D}
+
+Permite aplicar incrementos em submatrizes em $O(1)$ cada.
+O resultado final é obtido com uma soma de prefixos 2D.
+
+Para adicionar $x$ à região
+$[r_1,r_2]\times[c_1,c_2]$:
+
+\begin{lstlisting}
+diff[r1][c1] += x;
+diff[r2+1][c1] -= x;
+diff[r1][c2+1] -= x;
+diff[r2+1][c2+1] += x;
+\end{lstlisting}
+
+Depois, reconstrua o array:
+
+\begin{lstlisting}
+for (int i = 1; i <= n; i++)
+    for (int j = 1; j <= m; j++)
+        diff[i][j] += diff[i-1][j] + diff[i][j-1] - diff[i-1][j-1];
+\end{lstlisting}
+
+\textbf{Atualização:} $O(1)$.
+
+\textbf{Reconstrução:} $O(NM)$.
+
+
+\subsection{Sliding Window com Frequência}
+
+Mantém uma janela $[l,r]$ e suas frequências.
+
+Padrão para encontrar uma janela que satisfaz uma condição
+monotônica.
+
+\textbf{Complexidade:} $O(N)$.
+
+\begin{lstlisting}
+int l = 0;
+int have = 0;
+
+for (int r = 0; r < n; r++) {
+    freq[a[r]]++;
+
+    if (freq[a[r]] == 1)
+        have++;
+
+    while (have == need) {
+        // [l, r] eh uma janela valida
+
+        freq[a[l]]--;
+
+        if (freq[a[l]] == 0)
+            have--;
+
+        l++;
+    }
+}
+\end{lstlisting}
+
+Para contar subarrays válidas, frequentemente:
+
+\begin{lstlisting}
+ans += r - l + 1;
+\end{lstlisting}
+
+
+\subsection{Kadane}
+
+Encontra a maior soma de uma subarray não vazia.
+
+\textbf{Complexidade:} $O(N)$.
+
+\begin{lstlisting}
+long long cur = 0;
+long long ans = LLONG_MIN;
+
+for (long long x : a) {
+    cur = max(x, cur + x);
+    ans = max(ans, cur);
+}
+\end{lstlisting}
+
+
+\subsection{Contagem de Subarrays com Soma $K$}
+
+Conta a quantidade de subarrays contínuas cuja soma é exatamente $K$.
+
+Mantém a frequência dos prefixos já encontrados.
+
+\textbf{Complexidade:} $O(N)$ esperado.
+
+\begin{lstlisting}
+long long countSubarrays(const vector<int>& a, long long k) {
+    unordered_map<long long, int> freq;
+
+    freq[0] = 1;
+
+    long long sum = 0;
+    long long ans = 0;
+
+    for (long long x : a) {
+        sum += x;
+
+        if (freq.count(sum - k))
+            ans += freq[sum - k];
+
+        freq[sum]++;
+    }
+
+    return ans;
+}
+\end{lstlisting}
+
+
+\subsection{Contagem de Inversões}
+
+Um par $(i,j)$ é uma inversão se:
+\[
+i < j \quad\text{e}\quad a_i > a_j
+\]
+
+Pode ser calculado durante o Merge Sort.
+
+\textbf{Complexidade:} $O(N\log N)$.
+
+\begin{lstlisting}
+long long merge(vector<int>& a, int l, int m, int r) {
+    vector<int> tmp;
+    long long inv = 0;
+
+    int i = l, j = m + 1;
+
+    while (i <= m && j <= r) {
+        if (a[i] <= a[j]) {
+            tmp.push_back(a[i++]);
+        } else {
+            tmp.push_back(a[j++]);
+            inv += m - i + 1;
+        }
+    }
+
+    while (i <= m)
+        tmp.push_back(a[i++]);
+
+    while (j <= r)
+        tmp.push_back(a[j++]);
+
+    copy(tmp.begin(), tmp.end(), a.begin() + l);
+
+    return inv;
+}
+
+long long mergeSort(vector<int>& a, int l, int r) {
+    if (l >= r)
+        return 0;
+
+    int m = (l + r) / 2;
+
+    long long inv = 0;
+
+    inv += mergeSort(a, l, m);
+    inv += mergeSort(a, m + 1, r);
+    inv += merge(a, l, m, r);
+
+    return inv;
+}
+\end{lstlisting}
+
+Uso:
+
+\begin{lstlisting}
+long long inversions = mergeSort(a, 0, n - 1);
+\end{lstlisting}

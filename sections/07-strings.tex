@@ -1,0 +1,118 @@
+\section{Strings}
+
+\subsection{KMP}
+
+Encontra a primeira ocorrência de um padrão em uma string
+em $O(N+M)$, onde $N$ é o tamanho do texto e $M$ é o tamanho
+do padrão.
+
+\textbf{Prefix Function:} $O(M)$.
+
+\textbf{Busca:} $O(N)$.
+
+A prefix function armazena, para cada posição, o tamanho do maior
+prefixo próprio que tambem é um sufixo.
+
+\begin{lstlisting}
+vector<int> prefixFunction(const string& pattern) {
+    int patternLength = pattern.size();
+    vector<int> prefix(patternLength);
+
+    for (int i = 1; i < patternLength; i++) {
+        int matchedLength = prefix[i - 1];
+
+        // Recuar para o maior prefixo que ainda pode ser aproveitado.
+        while (matchedLength > 0 && pattern[i] != pattern[matchedLength]) 
+            matchedLength = prefix[matchedLength - 1];
+
+        if (pattern[i] == pattern[matchedLength])
+            matchedLength++;
+
+        prefix[i] = matchedLength;
+    }
+
+    return prefix;
+}
+
+int kmp(const string& text, const string& pattern) {
+    vector<int> prefix = prefixFunction(pattern);
+
+    int patternLength = pattern.size();
+
+    for (int textIndex = 0, matchedLength = 0; textIndex < text.size(); textIndex++) {
+        // Usa a prefix function para evitar voltar no texto.
+        while (matchedLength > 0 && text[textIndex] != pattern[matchedLength])
+            matchedLength = prefix[matchedLength - 1];
+
+        if (text[textIndex] == pattern[matchedLength])
+            matchedLength++;
+
+        // O padrao terminou neste indice do texto.
+        if (matchedLength == patternLength)
+            return textIndex - patternLength + 1;
+    }
+
+    return -1;
+}
+\end{lstlisting}
+
+Uso:
+\begin{lstlisting}
+string text, pattern;
+cin >> text >> pattern;
+
+int position = kmp(text, pattern);
+
+cout << position << '\n';
+\end{lstlisting}
+
+Para índice baseado em $1$:
+
+\begin{lstlisting}
+cout << kmp(text, pattern) + 1 << '\n';
+\end{lstlisting}
+
+
+\subsection{Z-Function}
+
+Calcula, para cada posição, o tamanho do maior prefixo da string
+que coincide com a substring iniciada naquela posição.
+
+\textbf{Complexidade:} $O(N)$.
+
+\begin{lstlisting}
+vector<int> zFunction(const string& text) {
+    int n = text.size();
+    vector<int> z(n);
+
+    int left = 0;
+    int right = 0;
+
+    for (int i = 1; i < n; i++) {
+        // Aproveita uma correspondencia ja calculada.
+        if (i <= right)
+            z[i] = min(right - i + 1, z[i - left]);
+
+        // Expande enquanto os caracteres continuarem iguais.
+        while (i + z[i] < n && text[z[i]] == text[i + z[i]]) {
+            z[i]++;
+        }
+
+        // Atualiza o intervalo com a maior correspondencia atual.
+        if (i + z[i] - 1 > right) {
+            left = i;
+            right = i + z[i] - 1;
+        }
+    }
+
+    return z;
+}
+\end{lstlisting}
+
+Uso:
+\begin{lstlisting}
+string text;
+cin >> text;
+
+vector<int> z = zFunction(text);
+\end{lstlisting}

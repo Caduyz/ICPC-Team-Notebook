@@ -1,0 +1,263 @@
+\section{Programação Dinâmica}
+
+\subsection{Knapsack 0-1}
+
+Cada item pode ser escolhido no máximo uma vez.
+
+\textbf{Complexidade:} $O(NC)$.
+
+\begin{lstlisting}
+long long knapsack01(const vector<long long>& weight, const vector<long long>& value, long long capacity) {
+    int itemCount = weight.size();
+
+    vector<long long> dp(capacity + 1, 0);
+
+    for (int item = 0; item < itemCount; item++) {
+        // Percorrer de tras para frente impede que o mesmo item seja usado mais de uma vez.
+        for (long long currentCapacity = capacity; currentCapacity >= weight[item]; currentCapacity--)
+            dp[currentCapacity] = max(dp[currentCapacity],
+                                      dp[currentCapacity - weight[item]] + value[item]);
+    }
+
+    return dp[capacity];
+}
+\end{lstlisting}
+
+A transição é:
+\[
+dp[c] =
+\max(
+dp[c],
+dp[c-w_i] + v_i
+)
+\]
+
+A iteração da capacidade deve ser \textbf{decrescente}.
+
+
+\subsection{Knapsack Inteira}
+
+Cada item pode ser escolhido qualquer número de vezes.
+
+\textbf{Complexidade:} $O(NC)$.
+
+\begin{lstlisting}
+long long unboundedKnapsack(const vector<long long>& weight, const vector<long long>& value, long long capacity) {
+    int itemCount = weight.size();
+
+    vector<long long> dp(capacity + 1, 0);
+
+    for (int item = 0; item < itemCount; item++) {
+        // Percorrer para frente permite reutilizar o mesmo item varias vezes.
+        for (long long currentCapacity = weight[item]; currentCapacity <= capacity; currentCapacity++)
+            dp[currentCapacity] = max(dp[currentCapacity], 
+                                      dp[currentCapacity - weight[item]] + value[item]);
+    }
+
+    return dp[capacity];
+}
+\end{lstlisting}
+
+A diferença essencial para o Knapsack 0-1 é a direção do loop:
+\[
+\boxed{
+\text{0-1: decrescente}
+\qquad
+\text{Inteira: crescente}
+}
+\]
+
+
+\subsection{LIS --- Longest Increasing Subsequence}
+
+Encontra o comprimento da maior subsequência estritamente crescente.
+
+\textbf{Complexidade:} $O(N\log N)$.
+
+\begin{lstlisting}
+int longestIncreasingSubsequence(const vector<int>& values) {
+    vector<int> tails;
+
+    for (int value : values) {
+        // Primeiro elemento >= value.
+        auto position = lower_bound(tails.begin(), tails.end(), value);
+
+        if (position == tails.end())
+            tails.push_back(value);
+        else
+            *position = value;
+    }
+
+    return tails.size();
+}
+\end{lstlisting}
+
+\texttt{tails[i]} representa o menor valor possível para o
+último elemento de uma LIS de tamanho $i+1$.
+
+Para subsequência \textbf{não decrescente}, use \texttt{upper\_bound}.
+
+
+\subsection{LCS --- Longest Common Subsequence}
+
+Encontra o tamanho da maior subsequência comum entre duas sequências.
+
+\textbf{Complexidade:} $O(NM)$.
+
+\begin{lstlisting}
+int longestCommonSubsequence(const string& first, const string& second) {
+    int firstLength = first.size();
+    int secondLength = second.size();
+
+    vector<vector<int>> dp(firstLength + 1, vector<int>(secondLength + 1, 0));
+
+    for (int firstIndex = 1; firstIndex <= firstLength; firstIndex++) {
+        for (int secondIndex = 1; secondIndex <= secondLength; secondIndex++) {
+            if (first[firstIndex - 1] == second[secondIndex - 1]) {
+                // Os caracteres podem fazer parte da subsequencia comum.
+                dp[firstIndex][secondIndex] = dp[firstIndex - 1][secondIndex - 1] + 1;
+            } else {
+                // Descarta um dos dois caracteres.
+                dp[firstIndex][secondIndex] = 
+                    max(dp[firstIndex - 1][secondIndex],
+                        dp[firstIndex][secondIndex - 1]);
+            }
+        }
+    }
+
+    return dp[firstLength][secondLength];
+}
+\end{lstlisting}
+
+Transição:
+\[
+dp[i][j] =
+\begin{cases}
+dp[i-1][j-1] + 1,
+& a_i=b_j \\[4pt]
+\max(dp[i-1][j],dp[i][j-1]),
+& a_i\neq b_j
+\end{cases}
+\]
+
+
+\subsection{Maximum Sum 2D}
+
+Encontra a submatriz com a maior soma.
+
+Pode ser reduzido a várias execuções do Kadane.
+
+Fixamos duas linhas e comprimimos as colunas em um vetor.
+
+\textbf{Complexidade:} $O(N^2M)$.
+
+Para uma matriz $N\times M$:
+
+\begin{lstlisting}
+long long maximumSum2D(const vector<vector<long long>>& matrix) {
+    int rowCount = matrix.size();
+    int columnCount = matrix[0].size();
+
+    long long answer = LLONG_MIN;
+
+    for (int topRow = 0; topRow < rowCount; topRow++) {
+        vector<long long> columnSum(columnCount, 0);
+
+        for (int bottomRow = topRow; bottomRow < rowCount; bottomRow++) {
+            // Soma cada coluna entre topRow e bottomRow.
+            for (int column = 0; column < columnCount; column++)
+                columnSum[column] += matrix[bottomRow][column];
+
+            // Agora o problema virou Kadane 1D.
+            long long currentSum = 0;
+
+            for (long long value : columnSum) {
+                currentSum = max(value, currentSum + value);
+
+                answer = max(answer, currentSum);
+            }
+        }
+    }
+
+    return answer;
+}
+\end{lstlisting}
+
+Para matrizes aproximadamente quadradas:
+\[
+O(N^3)
+\]
+
+Se for melhor escolher a menor dimensao para os pares:
+\[
+O(\min(N,M)^2\max(N,M))
+\]
+
+
+\subsection{PD de Intervalos}
+
+Usada quando o estado representa um intervalo
+$[l,r]$ e a transiçao divide o intervalo em partes menores.
+
+Forma geral:
+\[
+dp[l][r]
+=
+\min_{l\leq k<r}
+\left(
+dp[l][k]
++
+dp[k+1][r]
++
+cost(l,k,r)
+\right)
+\]
+
+A ordem de preenchimento deve garantir que intervalos menores
+sejam calculados antes dos maiores.
+
+\textbf{Complexidade do template:} $O(N^3)$.
+
+\begin{lstlisting}
+long long intervalDP(const vector<long long>& values) {
+    int valueCount = values.size();
+
+    vector<vector<long long>> dp(valueCount, vector<long long>(valueCount, 0));
+
+    for (int length = 2; length <= valueCount; length++) {
+        for (int left = 0; left + length - 1 < valueCount; left++) {
+            int right = left + length - 1;
+
+            dp[left][right] = INF;
+
+            for (int split = left; split < right; split++) {
+                // Adapte o custo conforme o problema.
+                long long cost = 0;
+
+                dp[left][right] = 
+                    min(dp[left][right],
+                        dp[left][split] + dp[split + 1][right] + cost);
+            }
+        }
+    }
+
+    return dp[0][valueCount - 1];
+}
+\end{lstlisting}
+
+Padrão de preenchimento:
+\[
+\boxed{
+\text{intervalos pequenos}
+\rightarrow
+\text{intervalos grandes}
+}
+\]
+
+Frequentemente o custo depende de uma soma prefixada:
+
+\begin{lstlisting}
+long long intervalSum(const vector<long long>& prefix, int left, int right) {
+    return prefix[right + 1] - prefix[left];
+}
+\end{lstlisting}

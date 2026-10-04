@@ -1,0 +1,102 @@
+\documentclass[a4paper, 10pt]{article}
+
+% Pacotes
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\usepackage[brazil]{babel}
+\usepackage{tikz}
+\usepackage{eso-pic}
+\usepackage{tocloft}
+\usepackage{titlesec}
+
+\setlength{\cftbeforesecskip}{2pt}
+
+
+\titleformat{\section}
+    {\large\bfseries}
+    {\thesection.}
+    {0.5 em}
+    {}
+
+\titlespacing*{\section}
+    {0pt}
+    {8pt}
+    {4pt}
+
+\AddToShipoutPictureBG{%
+    \begin{tikzpicture}[remember picture, overlay]
+        \draw[line width=0.3pt]
+            ([xshift=8mm,yshift=-8mm]current page.north west)
+            rectangle
+            ([xshift=-8mm,yshift=8mm]current page.south east);
+    \end{tikzpicture}%
+}
+
+% Margens
+\geometry{
+    top=1.5cm,
+    bottom=1.5cm,
+    left=1.5cm,
+    right=1.5cm
+}
+
+% Configuração do código
+\lstset{
+    language=C++,
+    basicstyle=\ttfamily\small,
+    numbers=none,
+    frame=single,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true
+}
+
+\usepackage{hyperref}
+\begin{document}
+
+\begin{center}
+    \vspace{0.2cm}
+
+    {\LARGE\bfseries Programming Cheat Sheet}
+
+    \vspace{0.3cm}
+
+    {\large 2026}
+
+    \vspace{0.3cm}
+
+    Carlos E. R. Oliveira
+    \quad • \quad
+    Kaique A. de Oliveira
+    \quad • \quad
+    Mateus A. Mizael
+\end{center}
+
+\vspace{0.2cm}
+
+\noindent\rule{\textwidth}{0.3pt}
+
+\vspace{0.2cm}
+
+\tableofcontents
+
+\vspace{0.2cm}
+
+\noindent\rule{\textwidth}{0.3pt}
+
+\input{sections/01-math}
+\input{sections/02-geometry}
+\input{sections/03-arrays}
+\input{sections/04-ed}
+\input{sections/05-graphs}
+\input{sections/06-dp}
+\input{sections/07-strings}
+\input{sections/08-misc}
+
+\end{document}

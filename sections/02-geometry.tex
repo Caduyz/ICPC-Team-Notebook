@@ -1,0 +1,84 @@
+\section{Geometria}
+
+\subsection{Interseção de Segmentos}
+
+Dados dois segmentos $\overline{AB}$ e $\overline{CD}$, verifica se eles possuem pelo menos um ponto em comum.
+
+Defina a orientação:
+\[
+cross(A,B,C)
+=
+(B_x-A_x)(C_y-A_y)
+-
+(B_y-A_y)(C_x-A_x)
+\]
+
+$>0$: C está a esquerda de $AB$
+
+$<0$: C está a direita de $AB$
+
+$=0$: pontos colineares
+
+Dois segmentos próprios se intersectam quando:
+\[
+orient(A,B,C) \neq orient(A,B,D)
+\]
+
+e
+\[
+orient(C,D,A) \neq orient(C,D,B)
+\]
+
+Os casos colineares exigem verificação adicional.
+
+\textbf{Complexidade:} $O(1)$.
+
+\begin{lstlisting}
+struct Point {
+    long long x, y;
+};
+
+long long cross(const Point& a, const Point& b, const Point& c) {
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+}
+
+bool onSegment(const Point& a, const Point& b, const Point& point) {
+    return cross(a, b, point) == 0 &&
+           min(a.x, b.x) <= point.x &&
+           point.x <= max(a.x, b.x) &&
+           min(a.y, b.y) <= point.y &&
+           point.y <= max(a.y, b.y);
+}
+
+bool segmentsIntersect(const Point& a, const Point& b, const Point& c, const Point& d) {
+    long long orientation1 = cross(a, b, c);
+    long long orientation2 = cross(a, b, d);
+    long long orientation3 = cross(c, d, a);
+    long long orientation4 = cross(c, d, b);
+
+    // Caso geral: os segmentos se cruzam propriamente.
+    if ((orientation1 > 0) != (orientation2 > 0) &&
+        (orientation3 > 0) != (orientation4 > 0)) {
+        return true;
+    }
+
+    // Casos degenerados: um ponto esta sobre o outro segmento.
+    if (orientation1 == 0 &&
+        onSegment(a, b, c))
+        return true;
+
+    if (orientation2 == 0 &&
+        onSegment(a, b, d))
+        return true;
+
+    if (orientation3 == 0 &&
+        onSegment(c, d, a))
+        return true;
+
+    if (orientation4 == 0 &&
+        onSegment(c, d, b))
+        return true;
+
+    return false;
+}
+\end{lstlisting}
