@@ -2,17 +2,12 @@
 
 \subsection{Big Integer}
 
-Permite trabalhar com inteiros gigantes usando \texttt{string}.
-
 \subsubsection{Utilitários}
 
 \begin{lstlisting}
-string stripLeadingZeros(const string& number) {
+string stripLeadingZeros (const string& number) {
     int firstNonZero = number.find_first_not_of('0');
-
-    if (firstNonZero == string::npos)
-        return "0";
-
+    if (firstNonZero == string::npos) return "0";
     return number.substr(firstNonZero);
 }
 \end{lstlisting}
@@ -24,37 +19,24 @@ Assume que ambos os números são positivos.
 \textbf{Complexidade:} $O(N)$.
 
 \begin{lstlisting}
-string addBig(const string& first, const string& second) {
+string addBig (const string& first, const string& second) {
     string result;
     int carry = 0;
-
     int i = first.size() - 1;
     int j = second.size() - 1;
-
     while (i >= 0 || j >= 0 || carry) {
         int digitSum = carry;
-
-        if (i >= 0)
-            digitSum += first[i--] - '0';
-
-        if (j >= 0)
-            digitSum += second[j--] - '0';
-
-        // Guarda o digito atual e propaga o carry.
+        if (i >= 0) digitSum += first[i--] - '0';
+        if (j >= 0) digitSum += second[j--] - '0';
         result.push_back('0' + digitSum % 10);
         carry = digitSum / 10;
     }
-
     reverse(result.begin(), result.end());
-
     return stripLeadingZeros(result);
 }
 \end{lstlisting}
 
-Uso:
-\begin{lstlisting}
-string sum = addBig(a, b);
-\end{lstlisting}
+
 
 \subsubsection{Subtração}
 
@@ -63,124 +45,84 @@ Assume que $first \geq second$.
 \textbf{Complexidade:} $O(N)$.
 
 \begin{lstlisting}
-string subtractBig(const string& first, const string& second) {
+string subtractBig (const string& first, const string& second) {
     string result;
     int borrow = 0;
-
     int i = first.size() - 1;
     int j = second.size() - 1;
-
     while (i >= 0) {
         int digit = (first[i] - '0') - borrow;
-
         if (j >= 0)
             digit -= second[j--] - '0';
-
-        // Pega uma unidade da proxima casa quando necessario.
         if (digit < 0) {
             digit += 10;
             borrow = 1;
         } else {
             borrow = 0;
         }
-
         result.push_back('0' + digit);
         i--;
     }
-
     reverse(result.begin(), result.end());
-
     return stripLeadingZeros(result);
 }
 \end{lstlisting}
 
-Uso:
-\begin{lstlisting}
-string difference = subtractBig(b, a);
-\end{lstlisting}
+
 
 \subsubsection{Multiplicação por Inteiro}
 
 \textbf{Complexidade:} $O(N)$.
 
 \begin{lstlisting}
-string multiplyByInt(const string& number, int multiplier) {
+string multiplyByInt (const string& number, int multiplier) {
     string result;
     long long carry = 0;
-
     for (int i = number.size() - 1; i >= 0; i--) {
         long long product = (number[i] - '0') * 1LL * multiplier;
         product += carry;
-
-        // Guarda o digito atual e leva o restante para a proxima casa.
         result.push_back('0' + product % 10);
         carry = product / 10;
     }
-
     while (carry > 0) {
         result.push_back('0' + carry % 10);
         carry /= 10;
     }
-
     reverse(result.begin(), result.end());
-
     return stripLeadingZeros(result);
 }
 \end{lstlisting}
 
-Uso:
-\begin{lstlisting}
-string result = multiplyByInt(number, 37);
-\end{lstlisting}
+
 
 \subsubsection{Divisão por Inteiro}
-
-Retorna o quociente e o resto.
 
 \textbf{Complexidade:} $O(N)$.
 
 \begin{lstlisting}
-pair<string, int> divideByInt(const string& number, int divisor) {
+pair<string, int> divideByInt (const string& number, int divisor) {
     string quotient;
     long long remainder = 0;
-
     for (char digit : number) {
-        // O resto anterior vira parte do proximo numero.
         remainder = remainder * 10 + (digit - '0');
-
         quotient.push_back('0' + remainder / divisor);
         remainder %= divisor;
     }
-
     return {stripLeadingZeros(quotient), remainder};
 }
 \end{lstlisting}
 
-Uso:
-\begin{lstlisting}
-auto [quotient, remainder] = divideByInt(number, 37);
-\end{lstlisting}
+
 
 \subsubsection{Módulo por Inteiro}
-
-Retorna $number \bmod mod$ sem construir o número inteiro.
 
 \textbf{Complexidade:} $O(N)$.
 
 \begin{lstlisting}
-int modString(const string& number, int mod) {
+int modString (const string& number, int mod) {
     long long remainder = 0;
-
-    for (char digit : number) {
-        // Equivale a formar o numero da esquerda para a direita.
+    for (char digit : number) 
         remainder = (remainder * 10 + (digit - '0')) % mod;
-    }
-
     return remainder;
 }
-\end{lstlisting}
-
-Uso:
-\begin{lstlisting}
-int remainder = modString(number, 37);
 \end{lstlisting}

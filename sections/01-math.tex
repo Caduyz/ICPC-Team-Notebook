@@ -1,42 +1,5 @@
 \section{Matemática}
 
-\subsection{MDC / GCD}
-
-Algoritmo de Euclides.
-
-\textbf{STL:} \texttt{std::gcd(a, b)}
-
-\textbf{Complexidade:} $O(\log(\min(a,b)))$.
-
-\begin{lstlisting}
-long long gcd(long long a, long long b) {
-    while (b) {
-        a %= b;
-        swap(a, b);
-    }
-
-    return a;
-}
-\end{lstlisting}
-
-
-\subsection{MMC / LCM}
-
-\[
-\operatorname{lcm}(a,b)
-=
-\frac{a}{\gcd(a,b)} \cdot b
-\]
-
-\textbf{STL:} \texttt{std::lcm(a, b)}
-
-\textbf{Complexidade:} $O(\log(\min(a,b)))$.
-
-\begin{lstlisting}
-long long lcm(long long a, long long b) {
-    return a / gcd(a, b) * b;
-}
-\end{lstlisting}
 
 
 \subsection{Combinatória}
@@ -55,20 +18,64 @@ Propriedade útil:
 \binom{n}{n-k}
 \]
 
-Para valores pequenos, pode ser calculado iterativamente evitando
-calcular os fatoriais completos.
+\subsubsection{Stars and Bars}
+Utilizado para distribuir $n$ objetos idênticos em $k$ caixas distintas.
+
+\begin{itemize}
+    \item \textbf{Caso 1 (Variáveis não-negativas, $x_i \ge 0$):}
+    O número de soluções inteiras para a equação $x_1 + x_2 + \dots + x_k = n$ é:
+    \[
+    \binom{n + k - 1}{k - 1}
+    \]
+    \item \textbf{Caso 2 (Variáveis estritamente positivas, $x_i \ge 1$):}
+    O número de soluções inteiras para a equação $x_1 + x_2 + \dots + x_k = n$ é:
+    \[
+    \binom{n - 1}{k - 1}
+    \]
+\end{itemize}
+
+\subsubsection{Princípio da Inclusão-Exclusão (PIE)}
+Calcula o tamanho da união de conjuntos ou conta elementos que evitam um conjunto de restrições.
+\[
+\left| \bigcup_{i=1}^{n} A_i \right| = \sum_{i} |A_i| - \sum_{i < j} |A_i \cap A_j| + \sum_{i < j < k} |A_i \cap A_j \cap A_k| - \dots + (-1)^{n-1} |A_1 \cap \dots \cap A_n|
+\]
+
+Implementação clássica via bitmask (ideal para $n \le 20$):
+\begin{lstlisting}
+// Exemplo geral para contar elementos usando PIE via bitmask
+ll total_union = 0;
+int n_sets = 15; // numero de condicoes/conjuntos
+for (int mask = 0; mask < (1 << n_sets); mask++) {
+    ll size_intersection = get_intersection_size(mask);
+    if (__builtin_popcount(mask) % 2 == 1) total_union += size_intersection;
+    else total_union -= size_intersection;
+}
+// Se o problema pede elementos que nao violam nenhuma condicao: Total - total_union
+\end{lstlisting}
+
+
+\subsection{Coeficientes Binomiais (Combinatória Otimizada)}
+
+Válido para $MOD$ primo.
+
+\textbf{Complexidade:} Pré-computação em $O(N \log(\text{MOD}))$ e consultas em $O(1)$.
 
 \begin{lstlisting}
-long long C(int n, int k) {
-    if (k > n - k)
-        k = n - k;
+ll fact[MAXN], invFact[MAXN];
 
-    long long res = 1;
+void precompute() {
+    fact[0] = invFact[0] = 1;
+    for (int i = 1; i < MAXN; i++) 
+        fact[i] = (fact[i - 1] * i) % MOD;
+    invFact[MAXN - 1] = modInverse(fact[MAXN - 1], MOD);
+    for (int i = MAXN - 2; i >= 1; i--) 
+        invFact[i] = (invFact[i + 1] * (i + 1)) % MOD;
+}
 
-    for (int i = 1; i <= k; i++)
-        res = res * (n - k + i) / i;
-
-    return res;
+// iterativamente em O(r): res = res * (n - r + i) / i; i = [1, k]
+ll nCr(int n, int r) {
+    if (r < 0 || r > n) return 0;
+    return fact[n] * invFact[r] % MOD * invFact[n - r] % MOD;
 }
 \end{lstlisting}
 
@@ -87,12 +94,9 @@ n(n-1)\cdots(n-k+1)
 \textbf{Complexidade:} $O(k)$.
 
 \begin{lstlisting}
-long long P(int n, int k) {
-    long long res = 1;
-
-    for (int i = 0; i < k; i++)
-        res *= n - i;
-
+ll P(int n, int k) {
+    ll res = 1;
+    for (int i = 0; i < k; i++) res *= n - i;
     return res;
 }
 \end{lstlisting}
@@ -100,16 +104,12 @@ long long P(int n, int k) {
 
 \subsection{Fast Pow}
 
-Calcula $a^b$ usando exponenciação binária.
-
 \textbf{Complexidade:} $O(\log b)$.
 
 \begin{lstlisting}
-long long binpow(long long a, long long b, long long mod) {
-    // Se o problema nao requer mod, basta remover o parametro e o mod do codigo
+ll binpow(ll a, ll b, ll mod) {
     a %= mod;
-    long long res = 1;
-    
+    ll res = 1;
     while (b) {
         if (b & 1) res = res * a % mod;
         a = a * a % mod;
@@ -139,13 +139,55 @@ a^{-1} \equiv a^{m-2} \pmod m
 
 \textbf{Complexidade:} $O(\log m)$.
 
+\textbf{Requer:} $m$ primo e $a \not\equiv 0 \pmod m$.
+
 \begin{lstlisting}
-long long modInverse(long long a, long long mod) {
+ll modInverse(ll a, ll mod) {
     return binpow(a, mod - 2, mod);
 }
 \end{lstlisting}
 
-\textbf{Requer:} $m$ primo e $a \not\equiv 0 \pmod m$.
+
+\subsection{Teorema Chinês dos Restos (CRT)}
+
+Resolve sistemas de congruências lineares:
+$x \equiv a_i \pmod{m_i}$ para $i = 0, \dots, n-1$.
+
+O algoritmo abaixo funciona mesmo se os módulos $m_i$ \textbf{não forem coprimos}. Retorna $\{x, M\}$ onde a solução geral é $x \pmod M$ ou $\{-1, -1\}$ se não houver solução.
+
+\textbf{Complexidade:} $O(n \log(\min(m)))$.
+
+\begin{lstlisting}
+// Retorna o gcd e calcula x, y tais que a*x + b*y = gcd(a, b)
+ll extgcd(ll a, ll b, ll &x, ll &y) {
+    if (!b) { x = 1; y = 0; return a; }
+    ll d = extgcd(b, a % b, y, x);
+    y -= a / b * x;
+    return d;
+}
+
+// Retorna {x, M} tal que x == A[i] (mod M[i]) ou {-1, -1} se inconsistente
+pair<ll, ll> crt(vector<ll> A, vector<ll> M) {
+    ll a1 = A[0], m1 = M[0];
+    for (size_t i = 1; i < A.size(); i++) {
+        ll a2 = A[i], m2 = M[i];
+        ll p, q;
+        ll g = extgcd(m1, m2, p, q);
+        if ((a2 - a1) % g != 0) return {-1, -1}; // Sem solucao
+        
+        __int128 mod = (__int128)m1 * (m2 / g);
+        __int128 k = (a2 - a1) / g;
+        __int128 m2_g = m2 / g;
+        p = (p % m2_g + m2_g) % m2_g;
+        __int128 diff = (__int128)p * (k % m2_g) % m2_g;
+        
+        __int128 x = (__int128)a1 + (__int128)m1 * diff;
+        a1 = (x % mod + mod) % mod;
+        m1 = mod;
+    }
+    return {a1, m1};
+}
+\end{lstlisting}
 
 
 \subsection{Totient de Euler}
@@ -170,116 +212,122 @@ n
 \textbf{Complexidade:} $O(\sqrt n)$.
 
 \begin{lstlisting}
-long long phi(long long n) {
-    long long res = n;
-
-    for (long long p = 2; p * p <= n; p++) {
+ll phi(ll n) {
+    ll res = n;
+    for (ll p = 2; p * p <= n; p++) {
         if (n % p == 0) {
-            while (n % p == 0)
-                n /= p;
-
+            while (n % p == 0) n /= p;
             res -= res / p;
         }
     }
-
-    if (n > 1)
-        res -= res / n;
-
+    if (n > 1) res -= res / n;
     return res;
 }
 \end{lstlisting}
 
-\subsection{Primos}
 
-\subsubsection{Crivo de Eratóstenes}
+\subsection{Linearidade da Expectativa e Variáveis Indicadoras}
 
-Encontra todos os primos até $N$.
+A esperança (valor esperado) da soma de variáveis aleatórias é sempre igual à soma das suas esperanças, \textbf{independentemente de haver dependência entre elas}:
+\[
+E\left[\sum_{i=1}^n X_i\right] = \sum_{i=1}^n E[X_i]
+\]
 
-\textbf{Complexidade:} $O(N \log\log N)$.
+Para uma variável indicadora $I_A$ de um evento $A$ (onde $I_A = 1$ se $A$ ocorre, $0$ caso contrário):
+\[
+E[I_A] = P(A)
+\]
+
+\begin{enumerate}
+    \item Defina $X$ como a variável total que você quer calcular o valor esperado.
+    \item Tente expressar $X = \sum_{i=1}^n X_i$, onde cada $X_i$ é o menor subproblema/evento possível.
+    \item Transforme $X_i$ em uma variável indicadora $I_i \in \{0, 1\}$.
+    \item Lembre-se: $E[X] = \sum E[I_i] = \sum P(\text{evento } i \text{ ocorrer})$.
+    \item Se os $P(\text{evento } i)$ forem idênticos por simetria, $E[X] = n \cdot P(\text{evento } 1)$.
+\end{enumerate}
+
+
+\subsection{Fast Fourier Transform (FFT)}
+
+O tamanho do vetor resultante deve ser ajustado para a /textbf{próxima} potência de $2$.
+
+\textbf{Complexidade:} $O(N \log N)$
 
 \begin{lstlisting}
-vector<bool> isPrime(N + 1, true);
-isPrime[0] = isPrime[1] = false;
+using cd = complex<double>;
+const double PI = acos(-1);
 
-for (int i = 2; i * i <= N; i++) {
-    if (!isPrime[i])
-        continue;
+void fft(vector<cd> &a, bool invert) {
+    int n = a.size();
+    for (int i = 1, j = 0; i < n; i++) {
+        int bit = n >> 1;
+        for (; j & bit; bit >>= 1) j ^= bit;
+        j ^= bit;
+        if (i < j) swap(a[i], a[j]);
+    }
+    for (int len = 2; len <= n; len <<= 1) {
+        double ang = 2 * PI / len * (invert ? -1 : 1);
+        cd wlen(cos(ang), sin(ang));
+        for (int i = 0; i < n; i += len) {
+            cd w(1);
+            for (int j = 0; j < len / 2; j++) {
+                cd u = a[i + j], v = a[i + j + len / 2] * w;
+                a[i + j] = u + v;
+                a[i + j + len / 2] = u - v;
+                w *= wlen; 
+            }
+        }
+    }
+    if (invert) for (auto &x : a) x /= n;
+}
 
-    // j = i * i eh uma otimizacao, 
-    // tenha em mente que em alguns casos pode ser necessario iniciar com i + i
-    for (int j = i * i; j <= N; j += i)
-        isPrime[j] = false;
+vector<ll> multiply(vector<ll>& a, vector<ll>& b) {
+    vector<cd> fa(all(a)), fb(all(b));
+    int n = 1;
+    while (n < a.size() + b.size()) n <<= 1;
+    fa.resize(n); fb.resize(n);
+    
+    fft(fa, false); fft(fb, false);
+    for (int i = 0; i < n; i++) fa[i] *= fb[i];
+    fft(fa, true);
+    
+    vector<ll> result(n);
+    for (int i = 0; i < n; i++) result[i] = round(fa[i].real());
+    return result;
 }
 \end{lstlisting}
 
 
-\subsubsection{Fatoração Prima}
+\subsection{Exponenciação de Matrizes}
 
-Decompõe $n$ em seus fatores primos.
-
-\textbf{Complexidade:} $O(\sqrt n)$.
+\textbf{Complexidade:} $O(N^3 \log P)$
 
 \begin{lstlisting}
-vector<pair<long long, int>> factorize(long long n) {
-    vector<pair<long long, int>> factors;
+using Matrix = vector<vector<ll>>;
 
-    for (long long p = 2; p * p <= n; p++) {
-        if (n % p != 0)
-            continue;
-
-        int cnt = 0;
-
-        while (n % p == 0) {
-            n /= p;
-            cnt++;
+Matrix multiply(const Matrix &A, const Matrix &B) {
+    int n = A.size();
+    Matrix C(n, vector<ll>(n, 0));
+    for (int i = 0; i < n; i++) {
+        for (int k = 0; k < n; k++) {
+            if (A[i][k] == 0) continue;
+            for (int j = 0; j < n; j++)
+                C[i][j] = (C[i][j] + A[i][k] * B[k][j]) % MOD;
         }
-
-        factors.push_back({p, cnt});
     }
-
-    if (n > 1)
-        factors.push_back({n, 1});
-
-    return factors;
+    return C;
 }
-\end{lstlisting}
 
-
-\subsubsection{Contagem de Divisores}
-
-Se:
-\[
-n = p_1^{a_1}p_2^{a_2}\cdots p_k^{a_k}
-\]
-
-então a quantidade de divisores positivos de $n$ é:
-\[
-d(n) = (a_1+1)(a_2+1)\cdots(a_k+1)
-\]
-
-\textbf{Complexidade:} $O(\sqrt n)$.
-
-\begin{lstlisting}
-long long divisorCount(long long n) {
-    long long res = 1;
-
-    for (long long p = 2; p * p <= n; p++) {
-        if (n % p != 0)
-            continue;
-
-        int cnt = 0;
-
-        while (n % p == 0) {
-            n /= p;
-            cnt++;
-        }
-
-        res *= cnt + 1;
+Matrix power(Matrix A, ll p) {
+    int n = A.size();
+    Matrix res(n, vector<ll>(n, 0));
+    for (int i = 0; i < n; i++) res[i][i] = 1; // Matriz Identidade
+    while (p > 0) {
+        if (p & 1) res = multiply(res, A);
+        A = multiply(A, A);
+        p >>= 1;
     }
-
-    if (n > 1)
-        res *= 2;
-
     return res;
 }
 \end{lstlisting}
+

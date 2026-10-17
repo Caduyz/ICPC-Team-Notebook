@@ -2,83 +2,32 @@
 
 \subsection{Interseção de Segmentos}
 
-Dados dois segmentos $\overline{AB}$ e $\overline{CD}$, verifica se eles possuem pelo menos um ponto em comum.
-
-Defina a orientação:
-\[
-cross(A,B,C)
-=
-(B_x-A_x)(C_y-A_y)
--
-(B_y-A_y)(C_x-A_x)
-\]
-
-$>0$: C está a esquerda de $AB$
-
-$<0$: C está a direita de $AB$
-
-$=0$: pontos colineares
-
-Dois segmentos próprios se intersectam quando:
-\[
-orient(A,B,C) \neq orient(A,B,D)
-\]
-
-e
-\[
-orient(C,D,A) \neq orient(C,D,B)
-\]
-
-Os casos colineares exigem verificação adicional.
-
 \textbf{Complexidade:} $O(1)$.
 
 \begin{lstlisting}
 struct Point {
     long long x, y;
 };
-
-long long cross(const Point& a, const Point& b, const Point& c) {
-    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-}
-
-bool onSegment(const Point& a, const Point& b, const Point& point) {
-    return cross(a, b, point) == 0 &&
-           min(a.x, b.x) <= point.x &&
-           point.x <= max(a.x, b.x) &&
-           min(a.y, b.y) <= point.y &&
-           point.y <= max(a.y, b.y);
-}
-
-bool segmentsIntersect(const Point& a, const Point& b, const Point& c, const Point& d) {
-    long long orientation1 = cross(a, b, c);
-    long long orientation2 = cross(a, b, d);
-    long long orientation3 = cross(c, d, a);
-    long long orientation4 = cross(c, d, b);
-
-    // Caso geral: os segmentos se cruzam propriamente.
-    if ((orientation1 > 0) != (orientation2 > 0) &&
-        (orientation3 > 0) != (orientation4 > 0)) {
-        return true;
-    }
-
-    // Casos degenerados: um ponto esta sobre o outro segmento.
-    if (orientation1 == 0 &&
-        onSegment(a, b, c))
-        return true;
-
-    if (orientation2 == 0 &&
-        onSegment(a, b, d))
-        return true;
-
-    if (orientation3 == 0 &&
-        onSegment(c, d, a))
-        return true;
-
-    if (orientation4 == 0 &&
-        onSegment(c, d, b))
-        return true;
-
-    return false;
-}
+long long cross (Point p1, Point p2, Point p3) {
+    return ((p2.x - p1.x) * (p3.y - p1.y)) - ((p2.y - p1.y) * (p3.x - p1.x));
+};
+int sgn (long long val) {
+    if (val > 0) return 1;
+    if (val < 0) return -1;
+    return 0;
+};
+long long overlap (long long a1, long long a2, long long b1, long long b2) {
+    if (a1 > a2) swap(a1, a2);
+    if (b1 > b2) swap(b1, b2);
+    return max(a1, b1) <= min(a2, b2);
+};
+bool intersect (Point a, Point b, Point c, Point d) {
+    int cp1 = sgn(cross(a, b, c));
+    int cp2 = sgn(cross(a, b, d));
+    int cp3 = sgn(cross(c, d, a));
+    int cp4 = sgn(cross(c, d, b));
+    if (cp1 == 0 && cp2 == 0 && cp3 == 0 && cp4 == 0) 
+        return overlap(a.x, b.x, c.x, d.x) && overlap(a.y, b.y, c.y, d.y);
+    return (cp1 != cp2) && (cp3 != cp4);
+};
 \end{lstlisting}

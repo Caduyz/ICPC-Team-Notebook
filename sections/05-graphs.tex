@@ -1,231 +1,29 @@
 \section{Grafos}
 
-\subsection{BFS 0-1}
-
-Usado em grafos cujas arestas possuem peso apenas $0$ ou $1$.
-
-Mantém os vértices em uma \texttt{deque}:
-\begin{itemize}
-    \item peso $0$: adiciona no início;
-    \item peso $1$: adiciona no final.
-\end{itemize}
-
-\textbf{Complexidade:} $O(V + E)$.
-
-\begin{lstlisting}
-struct Edge {
-    int destination;
-    int weight;
-};
-
-vector<long long> zeroOneBFS(const vector<vector<Edge>>& graph, int origin) {
-    int vertexCount = graph.size();
-
-    vector<long long> distance(vertexCount, INF);
-
-    deque<int> vertices;
-
-    distance[origin] = 0;
-    vertices.push_front(origin);
-
-    while (!vertices.empty()) {
-        int currentVertex = vertices.front();
-        vertices.pop_front();
-
-        for (const Edge& edge : graph[currentVertex]) {
-            long long newDistance = distance[currentVertex] + edge.weight;
-
-            if (newDistance >= distance[edge.destination])
-                continue;
-
-            distance[edge.destination] = newDistance;
-
-            // Arestas de peso 0 devem ser processadas antes das arestas de peso 1.
-            if (edge.weight == 0)
-                vertices.push_front(edge.destination);
-            else
-                vertices.push_back(edge.destination);
-        }
-    }
-
-    return distance;
-}
-\end{lstlisting}
-
-
-\subsection{BFS Multi-Estado}
-
-Usado quando chegar ao mesmo vértice com estados diferentes
-produz situações diferentes.
-
-O princípio é tratar $(v, state)$ como um vértice diferente.
-
-\textbf{Complexidade:} $O(VS + ES)$, onde $S$ é o número de estados.
-
-\begin{lstlisting}
-struct State {
-    int vertex;
-    int state;
-};
-
-vector<vector<int>> multiStateBFS(const vector<vector<int>>& graph, int origin, int stateCount) {
-    int vertexCount = graph.size();
-
-    vector<vector<int>> distance(vertexCount, vector<int>(stateCount, -1));
-
-    queue<State> states;
-
-    // Estado inicial.
-    distance[origin][0] = 0;
-    states.push({origin, 0});
-
-    while (!states.empty()) {
-        State current = states.front();
-        states.pop();
-
-        int currentDistance = distance[current.vertex][current.state];
-
-        for (int neighbor : graph[current.vertex]) {
-            // Exemplo: transicao que mantem o estado.
-            int nextState = current.state;
-
-            if (distance[neighbor][nextState] != -1)
-                continue;
-
-            distance[neighbor][nextState] = currentDistance + 1;
-
-            states.push({neighbor, nextState});
-        }
-    }
-
-    return distance;
-}
-\end{lstlisting}
-
-O trecho que determina \texttt{nextState} deve ser adaptado ao problema.
-
-A dimensão do vetor \texttt{distance} representa o espaço de estados.
-
-
-\subsection{Dijkstra Multi-Estado}
-
-Extensão do Dijkstra em que o vértice do grafo é combinado
-com um estado adicional.
-
-O estado completo é $(v, state)$.
-
-\textbf{Complexidade:} $O((VS + ES)\log(VS))$.
-
-\begin{lstlisting}
-struct Edge {
-    int destination;
-    long long weight;
-};
-
-struct State {
-    long long distance;
-    int vertex;
-    int state;
-
-    bool operator>(const State& other) const {
-        return distance > other.distance;
-    }
-};
-
-vector<vector<long long>> multiDijkstra(const vector<vector<Edge>>& graph, int origin, int stateCount) {
-    int vertexCount = graph.size();
-
-    vector<vector<long long>> distance(vertexCount, vector<long long>(stateCount, INF));
-
-    priority_queue<
-        State,
-        vector<State>,
-        greater<State>
-    > priorityQueue;
-
-    distance[origin][0] = 0;
-
-    priorityQueue.push({0, origin, 0});
-
-    while (!priorityQueue.empty()) {
-        State current = priorityQueue.top();
-        priorityQueue.pop();
-
-        // Ignora entradas antigas da priority_queue.
-        if (current.distance != distance[current.vertex][current.state])
-            continue;
-
-        for (const Edge& edge : graph[current.vertex]) {
-            // Adapte esta transicao conforme o problema.
-            int nextState = current.state;
-
-            long long newDistance = current.distance + edge.weight;
-
-            if (newDistance >= distance[edge.destination][nextState])
-                continue;
-
-            distance[edge.destination][nextState] = newDistance;
-
-            priorityQueue.push({newDistance, edge.destination, nextState});
-        }
-    }
-
-    return distance;
-}
-\end{lstlisting}
-
-O ponto mais importante é lembrar que:
-\[
-\boxed{\text{vértice real} \rightarrow (v,state)}
-\]
-
-Cada combinação é tratada como um vértice independente.
 
 
 \subsection{MST --- Kruskal}
-
-Encontra uma MST usando as arestas ordenadas por peso usando DSU para evitar ciclos.
 
 \textbf{Complexidade:} $O(E\log E)$.
 
 \begin{lstlisting}
 using Edge = tuple<long long, int, int>;
-
-long long kruskal(int vertexCount, vector<Edge> edges) {
-    priority_queue<
-        Edge,
-        vector<Edge>,
-        greater<Edge>
-    > pq;
-
-    for (const auto& [weight, firstVertex, secondVertex] : edges)
-        pq.push({weight, firstVertex, secondVertex});
-
-    DSU disjointSet(vertexCount);
-
-    long long totalWeight = 0;
-    int selectedEdges = 0;
-
+long long kruskal (int n, vector<Edge> edges) {
+    priority_queue<Edge, vector<Edge>, greater<Edge>> pq;
+    for (const auto& [w, u, v] : edges) pq.push({w, u, v});
+    DSU dsu(n);
+    long long totW = 0;
+    int used = 0;
     while (!pq.empty()) {
-        auto [weight, firstVertex, secondVertex] = pq.top();
-        pq.pop();
-
-        // Ignora arestas que formariam um ciclo.
-        if (!disjointSet.unite(firstVertex, secondVertex))
-            continue;
-
-        totalWeight += weight;
-        selectedEdges++;
-
-        if (selectedEdges == vertexCount - 1)
-            break;
+        auto [w, u, v] = pq.top(); pq.pop();
+        if (!dsu.unite(u, v)) continue;
+        totW += w;
+        used++;
+        if (used == n - 1) break;
     }
-
-    // Se nao houver arvore geradora, o grafo nao eh conexo.
-    if (selectedEdges != vertexCount - 1)
+    if (used != n - 1)
         return -1;
-
-    return totalWeight;
+    return totW;
 }
 \end{lstlisting}
 
@@ -234,158 +32,30 @@ long long kruskal(int vertexCount, vector<Edge> edges) {
 
 Adequado para grafos densos representados por matriz de adjacência.
 
-A cada iteração, adiciona o vértice ainda não utilizado com a menor aresta conhecida para a MST.
-
 \textbf{Complexidade:} $O(V^2)$.
 
 \begin{lstlisting}
-long long prim(const vector<vector<long long>>& graph) {
-    int vertexCount = graph.size();
+long long prim (const vector<vector<long long>>& graph) {
+    int n = graph.size();
+    vector<long long> minEdge(n, INF);
+    vector<bool> used(n, false);
+    long long totW = 0;
+    minEdge[0] = 0;
 
-    vector<long long> minimumEdge(vertexCount, INF);
-
-    vector<bool> used(vertexCount, false);
-
-    long long totalWeight = 0;
-
-    // Comeca a MST pelo vertice 0.
-    minimumEdge[0] = 0;
-
-    for (int iteration = 0; iteration < vertexCount; iteration++) {
-        int currentVertex = -1;
-
-        // Escolhe o vertice nao utilizado com a menor aresta para a MST.
-        for (int vertex = 0; vertex < vertexCount; vertex++)
-            if (!used[vertex] && (currentVertex == -1 || 
-                minimumEdge[vertex] < minimumEdge[currentVertex]))
-                currentVertex = vertex;
-
-        // O grafo nao eh conexo.
-        if (currentVertex == -1 || minimumEdge[currentVertex] == INF)
-            return -1;
-
-        used[currentVertex] = true;
-        totalWeight += minimumEdge[currentVertex];
-
-        // Atualiza a menor aresta que conecta cada vertice restante a MST.
-        for (int neighbor = 0; neighbor < vertexCount; neighbor++)
-            if (!used[neighbor] && graph[currentVertex][neighbor] < minimumEdge[neighbor])
-                minimumEdge[neighbor] = graph[currentVertex][neighbor];
+    for (int i = 0; i < n; i++) {
+        int curr = -1;
+        for (int j = 0; j < n; j++)
+            if (!used[j] && (curr == -1 || minEdge[j] < minEdge[curr])) curr = j;
+        if (curr == -1 || minEdge[curr] == INF) return -1;
+        used[curr] = true;
+        totW += minEdge[curr];
+        for (int k = 0; k < n; k++)
+            if (!used[k] && graph[curr][k] < minEdge[k]) minEdge[k] = graph[curr][k];
     }
-
-    return totalWeight;
+    return totW;
 }
 \end{lstlisting}
 
-
-\subsection{Diâmetro de uma Árvore}
-
-O diâmetro é o maior caminho entre dois vértices da árvore.
-
-Em uma árvore não ponderada:
-
-\begin{enumerate}
-    \item Faça BFS/DFS a partir de qualquer vértice.
-    \item Pegue o vértice mais distante $A$.
-    \item Faça outra BFS/DFS a partir de $A$.
-    \item A maior distância encontrada é o diâmetro.
-\end{enumerate}
-
-\textbf{Complexidade:} $O(V)$.
-
-\begin{lstlisting}
-pair<int, int> bfsFarthest(const vector<vector<int>>& tree, int origin) {
-    int vertexCount = tree.size();
-
-    vector<int> distance(vertexCount, -1);
-
-    queue<int> vertices;
-
-    distance[origin] = 0;
-    vertices.push(origin);
-
-    int farthestVertex = origin;
-
-    while (!vertices.empty()) {
-        int currentVertex = vertices.front();
-        vertices.pop();
-
-        if (distance[currentVertex] > distance[farthestVertex])
-            farthestVertex = currentVertex;
-
-        for (int neighbor : tree[currentVertex]) {
-            if (distance[neighbor] != -1)
-                continue;
-
-            distance[neighbor] = distance[currentVertex] + 1;
-
-            vertices.push(neighbor);
-        }
-    }
-
-    return {farthestVertex, distance[farthestVertex]};
-}
-
-int treeDiameter(const vector<vector<int>>& tree) {
-    // O vertice mais distante de qualquer vertice eh uma extremidade do diametro.
-    auto [endpoint, unusedDistance] = bfsFarthest(tree, 0);
-
-    // A maior distancia a partir dessa extremidade eh exatamente o diametro.
-    auto [otherEndpoint, diameter] = bfsFarthest(tree, endpoint);
-
-    return diameter;
-}
-\end{lstlisting}
-
-
-\subsection{Grafo Bipartido}
-
-Um grafo é bipartido se seus vértices podem ser divididos em dois conjuntos, 
-de modo que nenhuma aresta conecte vértices do mesmo conjunto.
-
-Pode ser verificado colorindo os vértices durante uma BFS/DFS.
-
-\textbf{Complexidade:} $O(V + E)$.
-
-\begin{lstlisting}
-bool isBipartite(const vector<vector<int>>& graph) {
-    int vertexCount = graph.size();
-
-    // -1  = nao colorido
-    // 0/1 = duas cores possiveis
-    vector<int> color(vertexCount, -1);
-
-    queue<int> vertices;
-
-    for (int startVertex = 0; startVertex < vertexCount; startVertex++) {
-        if (color[startVertex] != -1)
-            continue;
-
-        color[startVertex] = 0;
-        vertices.push(startVertex);
-
-        while (!vertices.empty()) {
-            int currentVertex = vertices.front();
-            vertices.pop();
-
-            for (int neighbor : graph[currentVertex]) {
-                if (color[neighbor] == -1) {
-                    // Vertices adjacentes precisam receber cores diferentes.
-                    color[neighbor] = color[currentVertex] ^ 1;
-
-                    vertices.push(neighbor);
-                }
-                else if (color[neighbor] == color[currentVertex]) {
-                    // Uma aresta entre vertices da mesma cor prova que nao eh bipartido.
-                    return false;
-                }
-            }
-        }
-    }
-
-    return true;
-}
-\end{lstlisting}
 
 
 \subsection{Bellman-Ford}
@@ -397,48 +67,26 @@ Também detecta ciclos negativos alcançáveis a partir da origem.
 \textbf{Complexidade:} $O(VE)$.
 
 \begin{lstlisting}
-struct Edge {
-    int origin;
-    int destination;
-    long long weight;
-};
-
-pair<vector<long long>, bool> bellmanFord(int vertexCount, const vector<Edge>& edges, int origin) {
-    vector<long long> distance(vertexCount, INF);
-
-    distance[origin] = 0;
-
-    // O menor caminho simples possui no maximo V - 1 arestas.
-    for (int iteration = 0; iteration < vertexCount - 1; iteration++) {
+using Edge = tuple<long long, int, int>;
+pair<vector<long long>, bool> bellmanFord (int n, const vector<Edge>& edges, int origin) {
+    vector<long long> dist(n, INF);
+    dist[origin] = 0;
+    for (int i = 0; i < n - 1; i++) {
         bool changed = false;
-
-        for (const Edge& edge : edges) {
-            if (distance[edge.origin] == INF)
-                continue;
-
-            long long newDistance = distance[edge.origin] + edge.weight;
-
-            if (newDistance < distance[edge.destination]) {
-                distance[edge.destination] = newDistance;
+        for (auto [u, v, w] : edges) {
+            if (dist[u] == INF) continue;
+            if (dist[u] + w < dist[v]) {
+                dist[v] = dist[u] + w;
                 changed = true;
             }
         }
-
-        // Nenhuma distancia mudou: ja convergiu.
-        if (!changed)
-            break;
+        if (!changed) break;
     }
-
-    // Se ainda for possivel relaxar uma aresta, existe um ciclo negativo alcancavel.
     for (const Edge& edge : edges) {
-        if (distance[edge.origin] == INF)
-            continue;
-
-        if (distance[edge.origin] + edge.weight < distance[edge.destination])
-            return {distance, true};
+        if (dist[u] == INF) continue;
+        if (dist[u] + w < dist[v]) return {dist, true};
     }
-
-    return {distance, false};
+    return {dist, false};
 }
 \end{lstlisting}
 
@@ -456,44 +104,23 @@ ciclos negativos.
 \textbf{Memória:} $O(V^2)$.
 
 \begin{lstlisting}
-void floydWarshall(vector<vector<long long>>& distance) {
-    int vertexCount = distance.size();
-
-    for (int intermediate = 0; intermediate < vertexCount; intermediate++) {
-        for (int origin = 0; origin < vertexCount; origin++) {
-            if (distance[origin][intermediate] == INF)
-                continue;
-
-            for (int destination = 0; destination < vertexCount; destination++) {
-                if (distance[intermediate][destination] == INF)
-                    continue;
-
-                distance[origin][destination] = 
-                    min(distance[origin][destination], 
-                        distance[origin][intermediate] + distance[intermediate][destination]);
+void floydWarshall (vector<vector<long long>>& dist) {
+    int n = dist.size();
+    for (int k = 0; k < n; k++) {
+        for (int u = 0; u < n; u++) {
+            if (dist[u][k] == INF) continue;
+            for (int v = 0; v < n; v++) {
+                if (dist[k][v] == INF) continue;
+                dist[u][v] = min(dist[u][v], dist[u][k] + dist[k][v]);
             }
         }
     }
 }
 \end{lstlisting}
 
-Inicialização:
-
-\begin{lstlisting}
-vector<vector<long long>> distance(vertexCount, vector<long long>(vertexCount, INF));
-
-for (int vertex = 0; vertex < vertexCount; vertex++) 
-    distance[vertex][vertex] = 0;
-
-for (const Edge& edge : edges) {
-    distance[edge.origin][edge.destination] =
-        min(distance[edge.origin][edge.destination], edge.weight);
-}
-\end{lstlisting}
-
 Após o algoritmo, se:
 \[
-distance[v][v] < 0
+dist[v][v] < 0
 \]
 
 para algum vértice $v$, existe um ciclo negativo.
