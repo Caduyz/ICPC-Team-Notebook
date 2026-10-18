@@ -1,0 +1,123 @@
+\section{Programação Dinâmica}
+
+
+
+\subsection{Tree Rerooting}
+
+\textbf{Complexidade:} $O(N)$.
+
+\begin{lstlisting}
+const int MAXN = 2e5 + 5;
+vector<int> adj[MAXN];
+ll sub_sz[MAXN], dp[MAXN], ans[MAXN];
+
+void dfs1(int u, int p) {
+    sub_sz[u] = 1;
+    dp[u] = 0;
+    for (int v : adj[u]) {
+        if (v == p) continue;
+        dfs1(v, u);
+        sub_sz[u] += sub_sz[v];
+        dp[u] += dp[v] + sub_sz[v];
+    }
+}
+
+void dfs2(int u, int p, int n) {
+    ans[u] = dp[u];
+    for (int v : adj[u]) {
+        if (v == p) continue;
+            dp[u] -= (dp[v] + sub_sz[v]);
+            sub_sz[u] -= sub_sz[v];
+            dp[v] += dp[u] + sub_sz[u];
+            sub_sz[v] += sub_sz[u];
+
+            dfs2(v, u, n);
+
+            sub_sz[v] -= sub_sz[u];
+            dp[v] -= (dp[u] + sub_sz[u]);
+            sub_sz[u] += sub_sz[v];
+            dp[u] += (dp[v] + sub_sz[v]);
+    }
+}
+\end{lstlisting}
+
+
+\subsection{Divide and Conquer DP Optimization}
+
+Otimiza DPs da forma $dp[i][j] = \min_{k < j} (dp[i-1][k] + C(k, j))$ quando há monotonia no ponto ótimo ($opt(i, j) \le opt(i, j+1)$).
+
+\textbf{Complexidade:} $O(K N \log N)$.
+
+\begin{lstlisting}
+ll dp_before[MAXN], dp_curr[MAXN];
+
+ll cost(int i, int j) {
+    // Retorna o custo de transicao do intervalo [i, j]
+    return 0; 
+}
+void compute(int l, int r, int opt_l, int opt_r) {
+    if (l > r) return;
+    int mid = (l + r) / 2;
+    pair<ll, int> best = {1e18, -1};
+
+    for (int k = opt_l; k <= min(mid, opt_r); k++) 
+        best = min(best, {dp_before[k] + cost(k + 1, mid), k});
+
+    dp_curr[mid] = best.first;
+    int opt = best.second;
+    compute(l, mid - 1, opt_l, opt);
+    compute(mid + 1, r, opt, opt_r);
+}
+\end{lstlisting}
+
+
+\subsection{SOS DP (Sum Over Subsets)}
+
+Calcula a soma sobre todos os subconjuntos de cada máscara de bits.
+
+\textbf{Complexidade:} $O(N 2^N)$.
+
+\begin{lstlisting}
+// F[mask] armazena o valor inicial. 
+// Ao termino do loop, F[mask] contera a soma dos valores de todos os subconjuntos de mask.
+void sos_dp(int n, vector<ll>& F) {
+    for (int i = 0; i < n; ++i) {
+        for (int mask = 0; mask < (1 << n); ++mask) {
+            if (mask & (1 << i)) {
+                F[mask] += F[mask ^ (1 << i)];
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+
+\subsection{Digit DP Template}
+
+Conta números em um intervalo $[0, N]$ que satisfazem certas propriedades baseadas em dígitos usando memoização.
+
+\begin{lstlisting}
+string s;
+ll memo[20][2]; // Ajuste os estados extras conforme o problema
+ll dp(int idx, bool tight, /* outros estados necessarios */) {
+    if (idx == s.size()) return 1; // Retorna 1 se encontrou um numero valido
+    if (memo[idx][tight] != -1) return memo[idx][tight];
+
+    ll ans = 0;
+    int limit = tight ? (s[idx] - '0') : 9;
+    
+    for (int d = 0; d <= limit; ++d) {
+        // Validacoes extras para o digito 'd' entram aqui se necessario
+        ans += dp(idx + 1, tight && (d == limit) /*, novos estados */);
+    }
+    return memo[idx][tight] = ans;
+}
+
+ll solve(ll n) {
+    if (n < 0) return 0;
+    s = to_string(n);
+    memset(memo, -1, sizeof(memo));
+    return dp(0, true /*, estado inicial */);
+}
+// Para resolver [A, B], faca solve(B) - solve(A - 1)
+\end{lstlisting}

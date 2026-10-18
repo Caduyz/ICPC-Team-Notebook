@@ -1,0 +1,217 @@
+\section{Misc}
+
+\subsection{Big Integer}
+
+\subsubsection*{Utilitários}
+
+\begin{lstlisting}
+string stripLeadingZeros (const string& number) {
+    int firstNonZero = number.find_first_not_of('0');
+    if (firstNonZero == string::npos) return "0";
+    return number.substr(firstNonZero);
+}
+\end{lstlisting}
+
+\subsubsection*{Soma}
+
+Assume que ambos os números são positivos.
+
+\textbf{Complexidade:} $O(N)$.
+
+\begin{lstlisting}
+string addBig (const string& first, const string& second) {
+    string result;
+    int carry = 0;
+    int i = first.size() - 1;
+    int j = second.size() - 1;
+    while (i >= 0 || j >= 0 || carry) {
+        int digitSum = carry;
+        if (i >= 0) digitSum += first[i--] - '0';
+        if (j >= 0) digitSum += second[j--] - '0';
+        result.push_back('0' + digitSum % 10);
+        carry = digitSum / 10;
+    }
+    reverse(all(result));
+    return stripLeadingZeros(result);
+}
+\end{lstlisting}
+
+\subsubsection*{Subtração}
+
+Assume que $first \geq second$.
+
+\textbf{Complexidade:} $O(N)$.
+
+\begin{lstlisting}
+string subtractBig (const string& first, const string& second) {
+    string result;
+    int borrow = 0;
+    int i = first.size() - 1;
+    int j = second.size() - 1;
+    while (i >= 0) {
+        int digit = (first[i] - '0') - borrow;
+        if (j >= 0)
+            digit -= second[j--] - '0';
+        if (digit < 0) {
+            digit += 10;
+            borrow = 1;
+        } else {
+            borrow = 0;
+        }
+        result.push_back('0' + digit);
+        i--;
+    }
+    reverse(all(result));
+    return stripLeadingZeros(result);
+}
+\end{lstlisting}
+
+\subsubsection*{Multiplicação por Inteiro}
+
+\textbf{Complexidade:} $O(N)$.
+
+\begin{lstlisting}
+string multiplyByInt (const string& number, int multiplier) {
+    string result;
+    ll carry = 0;
+    for (int i = number.size() - 1; i >= 0; i--) {
+        ll product = (number[i] - '0') * 1LL * multiplier;
+        product += carry;
+        result.push_back('0' + product % 10);
+        carry = product / 10;
+    }
+    while (carry > 0) {
+        result.push_back('0' + carry % 10);
+        carry /= 10;
+    }
+    reverse(all(result));
+    return stripLeadingZeros(result);
+}
+\end{lstlisting}
+
+\subsubsection*{Divisão por Inteiro}
+
+\textbf{Complexidade:} $O(N)$.
+
+\begin{lstlisting}
+pair<string, int> divideByInt (const string& number, int divisor) {
+    string quotient;
+    ll remainder = 0;
+    for (char digit : number) {
+        remainder = remainder * 10 + (digit - '0');
+        quotient.push_back('0' + remainder / divisor);
+        remainder %= divisor;
+    }
+    return {stripLeadingZeros(quotient), remainder};
+}
+\end{lstlisting}
+
+\subsubsection*{Módulo por Inteiro}
+
+\textbf{Complexidade:} $O(N)$.
+
+\begin{lstlisting}
+int modString (const string& number, int mod) {
+    ll remainder = 0;
+    for (char digit : number) 
+        remainder = (remainder * 10 + (digit - '0')) % mod;
+    return remainder;
+}
+\end{lstlisting}
+
+
+\subsection{Contagem de Inversões}
+
+\textbf{Complexidade:} $O(N\log N)$.
+
+\begin{lstlisting}
+ll count_inversions(vector<int>& a) {
+    // Compressao de Coordenadas
+    vector<int> vals = a;
+    sort(all(vals));
+    vals.erase(unique(all(vals)), vals.end());
+    SegTree st(sz(vals)); // Segtree para soma e update = 1
+    ll inv = 0;
+
+    for (int x : a) {
+        int rank = lower_bound(all(vals), x) - vals.begin();
+        inv += st.query(rank + 1, vals.size() - 1); 
+        st.update(rank, 1);
+    }
+    return inv;
+}
+\end{lstlisting}
+
+
+\subsection{Compressão de Coordenadas}
+
+Mapeia valores grandes para um intervalo compacto $[1, K]$ preservando a ordem relativa em $O(N \log N)$.
+
+\textbf{Complexidade:} $O(N + M + \text{matches})$.
+
+\begin{lstlisting}
+vector<int> vals = a; // vetor original
+sort(all(vals));
+vals.erase(unique(all(vals)), vals.end());
+
+auto get_id = [&](int x) {
+    return lower_bound(all(vals), x) - vals.begin() + 1; // 1-indexed
+};
+// Para cada elemento a[i], use get_id(a[i])
+\end{lstlisting}
+
+
+\subsection{Algoritmo de Mo (Range Queries Offline)}
+
+\textbf{Complexidade:} $O((N + Q) \sqrt{N})$.
+
+\begin{lstlisting}
+const int BLOCK = 450; // ~ sqrt(N)
+struct Query {
+    int l, r, id;
+    bool operator<(const Query& other) const {
+        int b1 = l / BLOCK, b2 = other.l / BLOCK;
+        if (b1 != b2) return b1 < b2;
+        return (b1 & 1) ? r < other.r : r > other.r; // Otimizacao de zigue-zague
+    }
+};
+void add(int idx) { /* Adiciona o elemento na estrutura de dados */ }
+void remove(int idx) { /* Remove o elemento da estrutura de dados */ }
+long long get_answer() { /* Retorna a resposta atual */ return 0; }
+vector<ll solve_mo(vector<Query>& queries, const vector<int>& a) {
+    int q = queries.size();
+    vector<ll ans(q);
+    sort(queries.begin(), queries.end());
+    int cur_l = 0, cur_r = -1;
+    for (auto& qry : queries) {
+        while (cur_l > qry.l) add(--cur_l);
+        while (cur_r < qry.r) add(++cur_r);
+        while (cur_l < qry.l) remove(cur_l++);
+        while (cur_r > qry.r) remove(cur_r--);
+        ans[qry.id] = get_answer();
+    }
+    return ans;
+}
+\end{lstlisting}
+
+
+\subsection{Meet-in-the-Middle}
+
+\textbf{Complexidade:} $O(2^{N/2} \log(2^{N/2}))$.
+
+\begin{lstlisting}
+// Exemplo generico para subconjuntos (Subset Sum / Knapsack)
+vector<ll generate_sums(const vector<ll& v) {
+    int n = v.size();
+    vector<ll sums;
+    for (int mask = 0; mask < (1 << n); ++mask) {
+        long long s = 0;
+        for (int i = 0; i < n; ++i) {
+            if (mask & (1 << i)) s += v[i];
+        }
+        sums.push_back(s);
+    }
+    sort(all(sums));
+    return sums;
+}
+\end{lstlisting}

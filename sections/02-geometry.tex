@@ -1,33 +1,190 @@
-\section{Geometria}
+\section{Geometria Computacional}
 
-\subsection{Interseção de Segmentos}
+
+
+\subsection{Primitivas Básicas}
+
+\begin{lstlisting}
+const double EPS = 1e-9;
+
+struct Point {
+    double x, y;
+    Point(double x = 0, double y = 0) : x(x), y(y) {}
+    
+    Point operator+(const Point &p) const { return Point(x + p.x, y + p.y); }
+    Point operator-(const Point &p) const { return Point(x - p.x, y - p.y); }
+    Point operator*(double c) const { return Point(x * c, y * c); }
+    Point operator/(double c) const { return Point(x / c, y / c); }
+    
+    double cross(const Point &p) const { return x * p.y - y * p.x; }
+    double dot(const Point &p) const { return x * p.x + y * p.y; }
+    double dist2() const { return x * x + y * y; }
+    double dist(const Point &p) const { return sqrt((*this - p).dist2()); }
+};
+
+// Retorna o sentido do produto vetorial (> 0 se anti-horario, < 0 se horario, 0 se colinear)
+double orientation(Point a, Point b, Point c) {
+    return (b - a).cross(c - a);
+}
+\end{lstlisting}
+
+\subsection{Convex Hull (Monotone Chain)}
+
+\textbf{Complexidade:} $O(N \log N)$.
+
+\begin{lstlisting}
+// Retorna os pontos do Convex Hull em sentido anti-horario
+vector<Point> convex_hull(vector<Point> pts) {
+    int n = pts.size(), k = 0;
+    if (n <= 2) return pts;
+    vector<Point> h(2 * n);
+    sort(all(pts), [](Point a, Point b) {
+        return a.x < b.x || (a.x == b.x && a.y < b.y);
+    });
+    for (int i = 0; i < n; i++) {
+        while (k >= 2 && (h[k - 1] - h[k - 2]).cross(pts[i] - h[k - 2]) <= 0) k--;
+        h[k++] = pts[i];
+    }
+    for (int i = n - 2, t = k + 1; i >= 0; i--) {
+        while (k >= t && (h[k - 1] - h[k - 2]).cross(pts[i] - h[k - 2]) <= 0) k--;
+        h[k++] = pts[i];
+    }
+    h.resize(k - 1);
+    return h;
+}
+\end{lstlisting}
+
+
+\subsection{Rotating Calipers (Diâmetro do Polígono)}
+
+\textbf{Complexidade:} $O(N)$.
+
+\textbf{Requer:} Os pontos devem formar um polígono convexo ordenado no sentido anti-horário (sem pontos colineares duplicados).
+
+\begin{lstlisting}
+double rotating_calipers(const vector<Point>& hull) {
+    int n = hull.size();
+    if (n == 1) return 0;
+    if (n == 2) return hull[0].dist2(hull[1]);
+
+    double max_dist_sq = 0;
+    int k = 1;
+    while (abs((hull[1] - hull[0]).cross(hull[k + 1] - hull[0])) > 
+           abs((hull[1] - hull[0]).cross(hull[k] - hull[0]))) {
+        k = (k + 1) % n;
+    }
+
+    int i = 0, j = k;
+    while (i <= k && j < n) {
+        max_dist_sq = max(max_dist_sq, (hull[i] - hull[j]).dist2());
+        Point dir_i = hull[(i + 1) % n] - hull[i];
+        Point dir_j = hull[(j + 1) % n] - hull[j];
+
+        if (dir_i.cross(dir_j) > 0) j = (j + 1) % n;
+        else i++;
+    }
+    return max_dist_sq; // retorna o quadrado da distancia
+}
+\end{lstlisting}
+
+
+\subsection{Intersecção de Segmentos de Reta}
 
 \textbf{Complexidade:} $O(1)$.
 
 \begin{lstlisting}
-struct Point {
-    long long x, y;
-};
-long long cross (Point p1, Point p2, Point p3) {
-    return ((p2.x - p1.x) * (p3.y - p1.y)) - ((p2.y - p1.y) * (p3.x - p1.x));
-};
-int sgn (long long val) {
-    if (val > 0) return 1;
-    if (val < 0) return -1;
-    return 0;
-};
-long long overlap (long long a1, long long a2, long long b1, long long b2) {
-    if (a1 > a2) swap(a1, a2);
-    if (b1 > b2) swap(b1, b2);
-    return max(a1, b1) <= min(a2, b2);
-};
-bool intersect (Point a, Point b, Point c, Point d) {
-    int cp1 = sgn(cross(a, b, c));
-    int cp2 = sgn(cross(a, b, d));
-    int cp3 = sgn(cross(c, d, a));
-    int cp4 = sgn(cross(c, d, b));
-    if (cp1 == 0 && cp2 == 0 && cp3 == 0 && cp4 == 0) 
-        return overlap(a.x, b.x, c.x, d.x) && overlap(a.y, b.y, c.y, d.y);
-    return (cp1 != cp2) && (cp3 != cp4);
-};
+bool on_segment(Point a, Point b, Point c) {
+    return c.x >= min(a.x, b.x) - EPS && c.x <= max(a.x, b.x) + EPS &&
+           c.y >= min(a.y, b.y) - EPS && c.y <= max(a.y, b.y) + EPS;
+}
+
+bool intersect(Point a, Point b, Point c, Point d) {
+    double o1 = orientation(a, b, c);
+    double o2 = orientation(a, b, d);
+    double o3 = orientation(c, d, a);
+    double o4 = orientation(c, d, b);
+    if (((o1 > EPS && o2 < -EPS) || (o1 < -EPS && o2 > EPS)) &&
+        ((o3 > EPS && o4 < -EPS) || (o3 < -EPS && o4 > EPS))) {
+        return true;
+    }
+    if (abs(o1) <= EPS && on_segment(a, b, c)) return true;
+    if (abs(o2) <= EPS && on_segment(a, b, d)) return true;
+    if (abs(o3) <= EPS && on_segment(c, d, a)) return true;
+    if (abs(o4) <= EPS && on_segment(c, d, b)) return true;
+    return false;
+}
+\end{lstlisting}
+
+
+\subsection{Intersecção de Retas}
+
+\textbf{Complexidade:} $O(1)$.
+
+\begin{lstlisting}
+bool line_intersection(Point a, Point b, Point c, Point d, Point &out) {
+    double denom = (b - a).cross(d - c);
+    if (abs(denom) <= EPS) return false; // Retas paralelas ou coincidentes
+    double t = (c - a).cross(d - c) / denom;
+    out = a + (b - a) * t;
+    return true;
+}
+\end{lstlisting}
+
+
+\subsection{Distância de Ponto a Reta e Segmento}
+
+\textbf{Complexidade:} $O(1)$.
+
+\begin{lstlisting}
+double dist_point_to_line(Point p, Point a, Point b) {
+    return abs((b - a).cross(p - a)) / a.dist(b);
+}
+
+double dist_point_to_segment(Point p, Point a, Point b) {
+    Point ab = b - a;
+    Point ap = p - a;
+    Point bp = p - b;
+    if (ap.dot(ab) <= 0.0) return p.dist(a);
+    if (bp.dot(ab) >= 0.0) return p.dist(b);
+    return abs(ab.cross(ap)) / a.dist(b);
+}
+\end{lstlisting}
+
+
+\subsection{Área de Polígono (Shoelace)}
+
+Requer vértices ordenados em sentido horário ou anti-horário.
+
+\textbf{Complexidade:} $O(N)$.
+
+\begin{lstlisting}
+double polygon_area_2(const vector<Point>& poly) {
+    double area = 0;
+    int n = poly.size();
+    for (int i = 0; i < n; i++) {
+        Point p1 = poly[i];
+        Point p2 = poly[(i + 1) % n];
+        area += p1.cross(p2);
+    }
+    return abs(area); // retorna o dobro da area
+}
+\end{lstlisting}
+
+
+\subsection{Ponto em Polígono (Ray Casting)}
+
+\textbf{Complexidade:} $O(N)$.
+
+\begin{lstlisting}
+bool point_in_polygon(Point p, const vector<Point>& poly) {
+    int n = poly.size();
+    bool inside = false;
+    for (int i = 0, j = n - 1; i < n; j = i++) {
+        if ((poly[i].y > p.y) != (poly[j].y > p.y) &&
+            p.x < (poly[j].x - poly[i].x) * (p.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x) {
+            inside = !inside;
+        }
+    }
+    return inside;
+}
 \end{lstlisting}
