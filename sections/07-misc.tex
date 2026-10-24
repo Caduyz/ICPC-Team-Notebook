@@ -5,7 +5,7 @@
 \subsubsection*{Utilitários}
 
 \begin{lstlisting}
-string stripLeadingZeros (const string& number) {
+string stripLeadingZeros (const string &number) {
     int firstNonZero = number.find_first_not_of('0');
     if (firstNonZero == string::npos) return "0";
     return number.substr(firstNonZero);
@@ -16,10 +16,10 @@ string stripLeadingZeros (const string& number) {
 
 Assume que ambos os números são positivos.
 
-\textbf{Complexidade:} $O(N)$.
+\textbf{Complexidade:} $O(n)$.
 
 \begin{lstlisting}
-string addBig (const string& first, const string& second) {
+string addBig (const string &first, const string &second) {
     string result;
     int carry = 0;
     int i = first.size() - 1;
@@ -40,10 +40,10 @@ string addBig (const string& first, const string& second) {
 
 Assume que $first \geq second$.
 
-\textbf{Complexidade:} $O(N)$.
+\textbf{Complexidade:} $O(n)$.
 
 \begin{lstlisting}
-string subtractBig (const string& first, const string& second) {
+string subtractBig (const string &first, const string &second) {
     string result;
     int borrow = 0;
     int i = first.size() - 1;
@@ -68,10 +68,10 @@ string subtractBig (const string& first, const string& second) {
 
 \subsubsection*{Multiplicação por Inteiro}
 
-\textbf{Complexidade:} $O(N)$.
+\textbf{Complexidade:} $O(n)$.
 
 \begin{lstlisting}
-string multiplyByInt (const string& number, int multiplier) {
+string multiplyByInt (const string &number, int multiplier) {
     string result;
     ll carry = 0;
     for (int i = number.size() - 1; i >= 0; i--) {
@@ -91,10 +91,10 @@ string multiplyByInt (const string& number, int multiplier) {
 
 \subsubsection*{Divisão por Inteiro}
 
-\textbf{Complexidade:} $O(N)$.
+\textbf{Complexidade:} $O(n)$.
 
 \begin{lstlisting}
-pair<string, int> divideByInt (const string& number, int divisor) {
+pair<string, int> divideByInt (const string &number, int divisor) {
     string quotient;
     ll remainder = 0;
     for (char digit : number) {
@@ -108,10 +108,10 @@ pair<string, int> divideByInt (const string& number, int divisor) {
 
 \subsubsection*{Módulo por Inteiro}
 
-\textbf{Complexidade:} $O(N)$.
+\textbf{Complexidade:} $O(n)$.
 
 \begin{lstlisting}
-int modString (const string& number, int mod) {
+int modString (const string &number, int mod) {
     ll remainder = 0;
     for (char digit : number) 
         remainder = (remainder * 10 + (digit - '0')) % mod;
@@ -122,7 +122,7 @@ int modString (const string& number, int mod) {
 
 \subsection{Contagem de Inversões}
 
-\textbf{Complexidade:} $O(N\log N)$.
+\textbf{Complexidade:} $O(n\log n)$.
 
 \begin{lstlisting}
 ll count_inversions(vector<int>& a) {
@@ -145,9 +145,9 @@ ll count_inversions(vector<int>& a) {
 
 \subsection{Compressão de Coordenadas}
 
-Mapeia valores grandes para um intervalo compacto $[1, K]$ preservando a ordem relativa em $O(N \log N)$.
+Mapeia valores grandes para um intervalo compacto $[1, k]$ preservando a ordem relativa em $O(n \log n)$.
 
-\textbf{Complexidade:} $O(N + M + \text{matches})$.
+\textbf{Complexidade:} $O(n + m + \text{matches})$.
 
 \begin{lstlisting}
 vector<int> vals = a; // vetor original
@@ -163,7 +163,7 @@ auto get_id = [&](int x) {
 
 \subsection{Algoritmo de Mo (Range Queries Offline)}
 
-\textbf{Complexidade:} $O((N + Q) \sqrt{N})$.
+\textbf{Complexidade:} $O((n + q) \sqrt{n})$.
 
 \begin{lstlisting}
 const int BLOCK = 450; // ~ sqrt(N)
@@ -197,7 +197,7 @@ vector<ll solve_mo(vector<Query>& queries, const vector<int>& a) {
 
 \subsection{Meet-in-the-Middle}
 
-\textbf{Complexidade:} $O(2^{N/2} \log(2^{N/2}))$.
+\textbf{Complexidade:} $O(2^{n/2} \log(2^{n/2}))$.
 
 \begin{lstlisting}
 // Exemplo generico para subconjuntos (Subset Sum / Knapsack)

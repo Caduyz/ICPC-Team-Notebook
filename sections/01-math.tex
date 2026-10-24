@@ -49,16 +49,34 @@ for (int mask = 0; mask < (1 << n_sets); mask++) {
     ll size_intersection = get_intersection_size(mask);
     if (__builtin_popcount(mask) % 2 == 1) total_union += size_intersection;
     else total_union -= size_intersection;
-}
-// Se o problema pede elementos que nao violam nenhuma condicao: Total - total_union
+} // Se o problema pede elementos que nao violam nenhuma condicao: Total - total_union
 \end{lstlisting}
 
 
-\subsection{Coeficientes Binomiais (Combinatória Otimizada)}
+\subsubsection{Triângulo de Pascal}
+
+Pré-computa combinações do tipo $\binom{n}{k}$. Seguro mesmo para módulos não primos.
+
+\textbf{Complexidade:} Pré-computação em $O(n^2)$ e consultas em $O(1)$.
+
+\begin{lstlisting}
+long long C[MAXN][MAXN];
+void build_pascal() {
+    for (int i = 0; i < MAXN; i++) {
+        C[i][0] = 1; // nC0 = 1
+        for (int j = 1; j <= i; j++) {
+            C[i][j] = (C[i-1][j-1] + C[i-1][j]) % MOD;
+        }
+    }
+}
+\end{lstlisting}
+
+
+\subsubsection{Coeficientes Binomiais (Combinatória Otimizada)}
 
 Válido para $MOD$ primo.
 
-\textbf{Complexidade:} Pré-computação em $O(N \log(\text{MOD}))$ e consultas em $O(1)$.
+\textbf{Complexidade:} Pré-computação em $O(n \log(\text{MOD}))$ e consultas em $O(1)$.
 
 \begin{lstlisting}
 ll fact[MAXN], invFact[MAXN];
@@ -71,7 +89,6 @@ void precompute() {
     for (int i = MAXN - 2; i >= 1; i--) 
         invFact[i] = (invFact[i + 1] * (i + 1)) % MOD;
 }
-
 // iterativamente em O(r): res = res * (n - r + i) / i; i = [1, k]
 ll nCr(int n, int r) {
     if (r < 0 || r > n) return 0;
@@ -80,7 +97,7 @@ ll nCr(int n, int r) {
 \end{lstlisting}
 
 
-\subsection{Permutação}
+\subsubsection{Permutação}
 
 Número de maneiras de escolher e ordenar $k$ elementos dentre $n$:
 \[
@@ -165,7 +182,6 @@ ll extgcd(ll a, ll b, ll &x, ll &y) {
     y -= a / b * x;
     return d;
 }
-
 // Retorna {x, M} tal que x == A[i] (mod M[i]) ou {-1, -1} se inconsistente
 pair<ll, ll> crt(vector<ll> A, vector<ll> M) {
     ll a1 = A[0], m1 = M[0];
@@ -251,7 +267,7 @@ E[I_A] = P(A)
 
 O tamanho do vetor resultante deve ser ajustado para a /textbf{próxima} potência de $2$.
 
-\textbf{Complexidade:} $O(N \log N)$
+\textbf{Complexidade:} $O(n \log n)$
 
 \begin{lstlisting}
 using cd = complex<double>;
@@ -280,7 +296,6 @@ void fft(vector<cd> &a, bool invert) {
     }
     if (invert) for (auto &x : a) x /= n;
 }
-
 vector<ll> multiply(vector<ll>& a, vector<ll>& b) {
     vector<cd> fa(all(a)), fb(all(b));
     int n = 1;
@@ -300,7 +315,7 @@ vector<ll> multiply(vector<ll>& a, vector<ll>& b) {
 
 \subsection{Exponenciação de Matrizes}
 
-\textbf{Complexidade:} $O(N^3 \log P)$
+\textbf{Complexidade:} $O(n^3 \log p)$
 
 \begin{lstlisting}
 using Matrix = vector<vector<ll>>;
@@ -317,7 +332,6 @@ Matrix multiply(const Matrix &A, const Matrix &B) {
     }
     return C;
 }
-
 Matrix power(Matrix A, ll p) {
     int n = A.size();
     Matrix res(n, vector<ll>(n, 0));
@@ -331,3 +345,88 @@ Matrix power(Matrix A, ll p) {
 }
 \end{lstlisting}
 
+\subsection{Miller-Rabin e Pollard Rho}
+
+\textbf{pow\_mod:} $O(\log e)$
+
+\textbf{is\_prime:} $O(\log n)$
+
+\textbf{pollard\_rho:} $O(\sqrt[4]{n} \log n)$
+
+\textbf{factorize:} $O(\sqrt[4]{n} \log n)$
+
+\begin{lstlisting}
+using u64 = uint64_t;
+using u128 = __uint128_t;
+mt19937_64 rng(chrono::steady_clock::now().time_since_epoch().count());
+
+u64 mul_mod(u64 a, u64 b, u64 mod) {
+    return (u128)a * b % mod;
+}
+u64 pow_mod(u64 a, u64 e, u64 mod) {
+    u64 r = 1;
+    while (e > 0) {
+        if (e & 1) r = mul_mod(r, a, mod);
+        a = mul_mod(a, a, mod);
+        e >>= 1;
+    }
+    return r;
+}
+bool is_prime(u64 n) {
+    if (n < 2) return false;
+    for (u64 p : {2ULL, 3ULL, 5ULL, 7ULL, 11ULL, 13ULL, 17ULL, 19ULL, 23ULL, 29ULL, 31ULL, 37ULL}) {
+        if (n % p == 0) return n == p;
+    }
+    u64 d = n - 1;
+    int s = 0;
+    while ((d & 1) == 0) {
+        d >>= 1;
+        ++s;
+    }
+    for (u64 a : {2ULL, 325ULL, 9375ULL, 28178ULL, 450775ULL, 9780504ULL, 1795265022ULL}) {
+        if (a % n == 0) continue;
+        u64 x = pow_mod(a % n, d, n);
+        if (x == 1 || x == n - 1) continue;
+        bool witness = true;
+        for (int r = 1; r < s; ++r) {
+            x = mul_mod(x, x, n);
+            if (x == n - 1) {
+                witness = false;
+                break;
+            }
+        }
+        if (witness) return false;
+    }
+    return true;
+}
+u64 pollard_rho(u64 n) {
+    if (n % 2 == 0) return 2;
+    if (n % 3 == 0) return 3;
+    while (true) {
+        u64 c = uniform_int_distribution<u64>(1, n - 1)(rng);
+        u64 x = uniform_int_distribution<u64>(0, n - 1)(rng);
+        u64 y = x;
+        u64 d = 1;
+        auto f = [&](u64 v) -> u64 {
+            return ((u128)mul_mod(v, v, n) + c) % n;
+        };
+        while (d == 1) {
+            x = f(x);
+            y = f(f(y));
+            u64 diff = (x > y ? x - y : y - x);
+            d = __gcd(diff, n);
+        }
+        if (d != n) return d;
+    }
+}
+void factorize(u64 n, map<u64, int> &factors) {
+    if (n == 1) return;
+    if (is_prime(n)) {
+        factors[n]++;
+        return;
+    }
+    u64 d = pollard_rho(n);
+    factorize(d, factors);
+    factorize(n / d, factors);
+}
+\end{lstlisting}

@@ -2,9 +2,9 @@
 
 \subsection{KMP}
 
-\textbf{Prefix Function:} $O(M)$.
+\textbf{Prefix Function:} $O(m)$.
 
-\textbf{Busca:} $O(N)$.
+\textbf{Busca:} $O(n)$.
 
 \begin{lstlisting}
 vector<int> prefixFunction (const string& pattern) {
@@ -35,7 +35,7 @@ int kmp (const string& text, const string& pattern) {
 
 \subsection{Z-Function}
 
-\textbf{Complexidade:} $O(N)$.
+\textbf{Complexidade:} $O(n)$.
 
 \begin{lstlisting}
 vector<int> zFunction (const string& text) {
@@ -54,11 +54,21 @@ vector<int> zFunction (const string& text) {
 
 \subsection{Polynomial Rolling Hash}
 
-Permite calcular o hash de substrings em $O(1)$ após pré-processamento $O(N)$. Utiliza double hashing para evitar colisões.
+Utiliza double hashing para evitar colisões.
 
-\textbf{Complexidade:} $O(N)$ para Pré-processamento.
+\textbf{Complexidade:} $O(n)$ para Pré-processamento.
 
 \begin{lstlisting}
+struct DoubleHash {
+    ll h1, h2;
+    bool operator==(const DoubleHash& other) const {
+        return h1 == other.h1 && h2 == other.h2;
+    }
+    bool operator<(const DoubleHash& other) const {
+        if (h1 != other.h1) return h1 < other.h1;
+        return h2 < other.h2;
+    }
+};
 struct RollingHash {
     ll MOD1 = 1e9 + 7, MOD2 = 1e9 + 9;
     ll P1 = 31, P2 = 37;
@@ -75,8 +85,7 @@ struct RollingHash {
             h2[i+1] = (h2[i] * P2 + (s[i] - 'a' + 1)) % MOD2;
         }
     }
-    
-    pair<ll, ll> get(int l, int r) { // 0-indexed, inclusive
+    DoubleHash get(int l, int r) { // 0-indexed, inclusive
         ll hash1 = (h1[r+1] - h1[l] * p1[r - l + 1]) % MOD1;
         if (hash1 < 0) hash1 += MOD1;
         ll hash2 = (h2[r+1] - h2[l] * p2[r - l + 1]) % MOD2;
@@ -91,7 +100,7 @@ struct RollingHash {
 
 Encontra o maior palíndromo centrado em cada posição (ímpar e par) de uma string.
 
-\textbf{Complexidade:} $O(N)$.
+\textbf{Complexidade:} $O(n)$.
 
 \begin{lstlisting}
 vector<vector<int>> manacher(string s) {
@@ -115,7 +124,7 @@ vector<vector<int>> manacher(string s) {
 
 \subsection{Aho-Corasick Automaton}
 
-\textbf{Complexidade:} $O(N + M + \text{matches})$.
+\textbf{Complexidade:} $O(n + m + \text{matches})$.
 
 \begin{lstlisting}
 const int MAXC = 26;
@@ -184,43 +193,50 @@ struct AhoCorasick {
 
 \subsection{Suffix Automaton (SAM)}
 
-\textbf{Complexidade:} $O(N)$.
+\textbf{Complexidade:} $O(n)$.
 
 \begin{lstlisting}
 struct State {
     int len, link;
-    map<char, int> next;
+    int next[26]; // padrao para letras de 'a' a 'z', reajuste se necessario
 };
-const int MAXLEN = 1e5 + 5;
+
+const int MAXLEN = 1e5 + 5; // ajuste conforme o tamanho maximo esperado
 State st[MAXLEN * 2];
 int sz, last;
 
 void sam_init() {
     st[0].len = 0;
     st[0].link = -1;
+    memset(st[0].next, -1, sizeof(st[0].next));
     sz = 1;
     last = 0;
 }
 void sam_extend(char c) {
+    int id = c - 'a'; // intervalo [0, 25], reajuste se necessario
     int cur = sz++;
     st[cur].len = st[last].len + 1;
+    memset(st[cur].next, -1, sizeof(st[cur].next));
+    
     int p = last;
-    while (p != -1 && !st[p].next.count(c)) {
-        st[p].next[c] = cur;
+    while (p != -1 && st[p].next[id] == -1) {
+        st[p].next[id] = cur;
         p = st[p].link;
     }
-    if (p == -1) st[cur].link = 0;
+    
+    if (p == -1)
+        st[cur].link = 0;
     else {
-        int q = st[p].next[c];
-        if (st[p].len + 1 == st[q].len)
+        int q = st[p].next[id];
+        if (st[p].len + 1 == st[q].len) {
             st[cur].link = q;
-        else {
+        } else {
             int clone = sz++;
             st[clone].len = st[p].len + 1;
-            st[clone].next = st[q].next;
+            memcpy(st[clone].next, st[q].next, sizeof(st[q].next)); 
             st[clone].link = st[q].link;
-            while (p != -1 && st[p].next[c] == q) {
-                st[p].next[c] = clone;
+            while (p != -1 && st[p].next[id] == q) {
+                st[p].next[id] = clone;
                 p = st[p].link;
             }
             st[q].link = st[cur].link = clone;

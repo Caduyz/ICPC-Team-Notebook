@@ -4,13 +4,13 @@
 
 Suporta soma de prefixo e atualização pontual.
 
-\textbf{Atualização:} $O(\log N)$
+\textbf{Atualização:} $O(\log n)$
 
-\textbf{Consulta de prefixo:} $O(\log N)$
+\textbf{Consulta de prefixo:} $O(\log n)$
 
-\textbf{Soma em $[l,r]$:} $O(\log N)$
+\textbf{Soma em $[l,r]$:} $O(\log n)$
 
-Usa índices de $1$ a $N$.
+Usa índices de $1$ a $n$.
 
 \begin{lstlisting}
 int n;
@@ -38,9 +38,9 @@ ll query (int l, int r) {
 Permite consultas de ordem em intervalos usando
 \texttt{lower\_bound} / \texttt{upper\_bound}.
 
-\textbf{Construção:} $O(N\log N)$.
+\textbf{Construção:} $O(n\log n)$.
 
-\textbf{Consulta:} $O(\log^2 N)$.
+\textbf{Consulta:} $O(\log^2 n)$.
 
 \begin{lstlisting}
 int n;
@@ -72,11 +72,11 @@ Para contar elementos $\leq x$, use \texttt{upper\_bound}.
 
 \subsection{Li Chao Tree}
 
-Mantém um conjunto de retas $y = mx + c$ e responde a consultas de menor valor em um ponto $x$ em $O(\log X)$, aceitando inserções arbitrárias.
+Mantém um conjunto de retas $y = ax + b$ e responde a consultas de menor valor em um ponto $x$ em $O(\log x)$, aceitando inserções arbitrárias.
 
-\textbf{Inserção:} $O(\log X)$.
+\textbf{Inserção:} $O(\log x)$.
 
-\textbf{Consulta:} $O(\log X)$.
+\textbf{Consulta:} $O(\log x)$.
 
 \begin{lstlisting}
 struct Line {
@@ -96,10 +96,8 @@ struct LiChao {
         bool better_l = new_line.eval(l) < tree[node].eval(l);
         if (better_mid) swap(tree[node], new_line);
         if (l == r) return;
-        if (better_l != better_mid) 
-            add_line(2 * node, l, mid, new_line);
-        else
-            add_line(2 * node + 1, mid + 1, r, new_line);
+        if (better_l != better_mid) add_line(2 * node, l, mid, new_line);
+        else add_line(2 * node + 1, mid + 1, r, new_line);
     }
     ll query(int node, int l, int r, ll x) {
         int mid = (l + r) / 2;
@@ -114,14 +112,13 @@ struct LiChao {
 
 \subsection{Persistent Segment Tree}
 
-Mantém múltiplas versões de uma árvore de segmentos. Cada atualização cria apenas um novo caminho de nós ($O(\log N)$ novos nós por operação).
+Mantém múltiplas versões de uma árvore de segmentos. Cada atualização cria apenas um novo caminho de nós ($O(\log n)$ novos nós por operação).
 
-\textbf{Complexidade:} $O(\log N)$ em tempo e espaço por versão criada ou consulta.
+\textbf{Complexidade:} $O(\log n)$ em tempo e espaço por versão criada ou consulta.
 
 \begin{lstlisting}
 const int MAXN = 2e5 + 5;
 const int MAXNODES = MAXN * 40; // Ajuste conforme os limites de memoria
-
 struct Node {
     int val;
     int left, right;
@@ -129,7 +126,6 @@ struct Node {
 
 int root_ver[MAXN];
 int node_cnt = 0;
-
 int update(int prev_node, int l, int r, int idx, int val) {
     int cur_node = ++node_cnt;
     pool[cur_node] = pool[prev_node];
@@ -142,81 +138,11 @@ int update(int prev_node, int l, int r, int idx, int val) {
         pool[cur_node].right = update(pool[prev_node].right, mid + 1, r, idx, val);
     return cur_node;
 }
-
 int query(int node, int l, int r, int ql, int qr) {
     if (!node || ql > r || qr < l) return 0;
     if (ql <= l && r <= qr) return pool[node].val;
     int mid = (l + r) / 2;
     return query(pool[node].left, l, mid, ql, qr) + 
            query(pool[node].right, mid + 1, r, ql, qr);
-}
-\end{lstlisting}
-
-
-\subsection{Treap Implícita}
-
-Mantém uma sequência dinâmica de elementos permitindo inserções, remoções e inversões de intervalos (\textit{reverse}) em $O(\log N)$.
-
-\textbf{Complexidade:} $O(\log N)$ por operação de \texttt{split}, \texttt{merge} e modificação de intervalo.
-
-\begin{lstlisting}
-mt19937 rng(1337);
-
-struct Node {
-    int val, prior, sz;
-    bool rev;
-    Node *l, *r;
-    Node(int v) : val(v), prior(rng()), sz(1), rev(false), l(nullptr), r(nullptr) {}
-};
-
-using pnode = Node*;
-
-int get_sz(pnode t) { return t ? t->sz : 0; }
-void update(pnode t) {
-    if (t) t->sz = 1 + get_sz(t->l) + get_sz(t->r);
-}
-void push(pnode t) {
-    if (t && t->rev) {
-        t->rev = false;
-        swap(t->l, t->r);
-        if (t->l) t->l->rev ^= 1;
-        if (t->r) t->r->rev ^= 1;
-    }
-}
-// Divide a Treap t em L (primeiros 'key' elementos) e R (o restante)
-void split(pnode t, pnode &l, pnode &r, int key, int add = 0) {
-    if (!t) return void(l = r = nullptr);
-    push(t);
-    int cur_key = add + get_sz(t->l);
-    if (key <= cur_key) {
-        split(t->l, l, t->l, key, add);
-        r = t;
-    } else {
-        split(t->r, t->r, r, key, cur_key + 1);
-        l = t;
-    }
-    update(t);
-}
-// Une as Treaps l e r (assume que todos em l vem antes de r)
-void merge(pnode &t, pnode l, pnode r) {
-    push(l); push(r);
-    if (!l || !r) t = l ? l : r;
-    else if (l->prior > r->prior) {
-        merge(l->r, l->r, r);
-        t = l;
-    } else {
-        merge(r->l, l, r->l);
-        t = r;
-    }
-    update(t);
-}
-// Inverte o subvetor no intervalo [l, r] (0-indexed)
-void reverse_range(pnode &t, int l, int r) {
-    pnode t1, t2, t3;
-    split(t, t1, t2, l);
-    split(t2, t2, t3, r - l + 1);
-    if (t2) t2->rev ^= 1;
-    merge(t2, t2, t3);
-    merge(t, t1, t2);
 }
 \end{lstlisting}

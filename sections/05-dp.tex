@@ -2,55 +2,14 @@
 
 
 
-\subsection{Tree Rerooting}
-
-\textbf{Complexidade:} $O(N)$.
-
-\begin{lstlisting}
-const int MAXN = 2e5 + 5;
-vector<int> adj[MAXN];
-ll sub_sz[MAXN], dp[MAXN], ans[MAXN];
-
-void dfs1(int u, int p) {
-    sub_sz[u] = 1;
-    dp[u] = 0;
-    for (int v : adj[u]) {
-        if (v == p) continue;
-        dfs1(v, u);
-        sub_sz[u] += sub_sz[v];
-        dp[u] += dp[v] + sub_sz[v];
-    }
-}
-
-void dfs2(int u, int p, int n) {
-    ans[u] = dp[u];
-    for (int v : adj[u]) {
-        if (v == p) continue;
-            dp[u] -= (dp[v] + sub_sz[v]);
-            sub_sz[u] -= sub_sz[v];
-            dp[v] += dp[u] + sub_sz[u];
-            sub_sz[v] += sub_sz[u];
-
-            dfs2(v, u, n);
-
-            sub_sz[v] -= sub_sz[u];
-            dp[v] -= (dp[u] + sub_sz[u]);
-            sub_sz[u] += sub_sz[v];
-            dp[u] += (dp[v] + sub_sz[v]);
-    }
-}
-\end{lstlisting}
-
-
 \subsection{Divide and Conquer DP Optimization}
 
 Otimiza DPs da forma $dp[i][j] = \min_{k < j} (dp[i-1][k] + C(k, j))$ quando há monotonia no ponto ótimo ($opt(i, j) \le opt(i, j+1)$).
 
-\textbf{Complexidade:} $O(K N \log N)$.
+\textbf{Complexidade:} $O(k n \log n)$.
 
 \begin{lstlisting}
 ll dp_before[MAXN], dp_curr[MAXN];
-
 ll cost(int i, int j) {
     // Retorna o custo de transicao do intervalo [i, j]
     return 0; 
@@ -75,7 +34,7 @@ void compute(int l, int r, int opt_l, int opt_r) {
 
 Calcula a soma sobre todos os subconjuntos de cada máscara de bits.
 
-\textbf{Complexidade:} $O(N 2^N)$.
+\textbf{Complexidade:} $O(n 2^n)$.
 
 \begin{lstlisting}
 // F[mask] armazena o valor inicial. 
@@ -94,7 +53,7 @@ void sos_dp(int n, vector<ll>& F) {
 
 \subsection{Digit DP Template}
 
-Conta números em um intervalo $[0, N]$ que satisfazem certas propriedades baseadas em dígitos usando memoização.
+Conta números em um intervalo $[0, n]$ que satisfazem certas propriedades baseadas em dígitos usando memoização.
 
 \begin{lstlisting}
 string s;

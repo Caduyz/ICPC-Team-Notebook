@@ -2,39 +2,9 @@
 
 
 
-\subsection{MST --- Prim}
-
-Adequado para grafos densos representados por matriz de adjacência.
-
-\textbf{Complexidade:} $O(V^2)$.
-
-\begin{lstlisting}
-ll prim (const vector<vector<ll>>& graph) {
-    int n = graph.size();
-    vector<ll> minEdge(n, INF);
-    vector<bool> used(n, false);
-    ll totW = 0;
-    minEdge[0] = 0;
-
-    for (int i = 0; i < n; i++) {
-        int curr = -1;
-        for (int j = 0; j < n; j++)
-            if (!used[j] && (curr == -1 || minEdge[j] < minEdge[curr])) curr = j;
-        if (curr == -1 || minEdge[curr] == INF) return -1;
-        used[curr] = true;
-        totW += minEdge[curr];
-        for (int k = 0; k < n; k++)
-            if (!used[k] && graph[curr][k] < minEdge[k]) minEdge[k] = graph[curr][k];
-    }
-    return totW;
-}
-\end{lstlisting}
-
-
-
 \subsection{Bellman-Ford}
 
-\textbf{Complexidade:} $O(V E)$.
+\textbf{Complexidade:} $O(v e)$.
 
 \begin{lstlisting}
 using Edge = tuple<ll, int, int>;
@@ -63,9 +33,9 @@ pair<vector<ll>, bool> bellmanFord (int n, const vector<Edge>& edges, int origin
 
 \subsection{Lowest Common Ancestor (Binary Lifting)}
 
-\textbf{Pré-Processamento:} $O(N \log N)$.
+\textbf{Pré-Processamento:} $O(n \log n)$.
 
-\textbf{Consulta:} $O(\log N)$.
+\textbf{Consulta:} $O(\log n)$.
 
 \begin{lstlisting}
 const int MAXN = 2e5 + 5;
@@ -104,7 +74,7 @@ int lca(int u, int v) {
 
 \subsection{Heavy-Light Decomposition (HLD)}
 
-\textbf{Complexidade:} $O(\log^2 N)$.
+\textbf{Complexidade:} $O(\log^2 n)$.
 
 \begin{lstlisting}
 vector<int> adj[MAXN];
@@ -135,7 +105,7 @@ void dfs_hld(int u, int h) {
 
 \subsection{Centroid Decomposition}
 
-\textbf{Complexidade:} $O(N \log N)$.
+\textbf{Complexidade:} $O(n \log n)$.
 
 \begin{lstlisting}
 vector<set<int>> adj_c; // Grafo mutavel (arestas removidas)
@@ -166,7 +136,7 @@ void decompose(int u, int p) {
 
 \subsection{Dinic's Algorithm (Max Flow)}
 
-\textbf{Complexidade:} $O(V^2 E)$ (muito mais rápido na prática).
+\textbf{Complexidade:} $O(v^2 e)$ (muito mais rápido na prática).
 
 \begin{lstlisting}
 struct Edge { int to; ll cap, flow; int rev; };
@@ -220,7 +190,7 @@ struct Dinic {
 
 \subsection{Pontes em Grafos (Tarjan)}
 
-\textbf{Complexidade:} $O(N + M)$.
+\textbf{Complexidade:} $O(n + m)$.
 
 \begin{lstlisting}
 vector<int> adj_t[MAXN];
@@ -244,7 +214,7 @@ void dfs_bridge(int v, int p = -1) {
 
 \subsection{Hopcroft-Karp (Maximum Bipartite Matching)}
 
-\textbf{Complexidade:} $O(E \sqrt{V})$.
+\textbf{Complexidade:} $O(e \sqrt{v})$.
 
 \begin{lstlisting}
 struct HopcroftKarp {
@@ -296,13 +266,12 @@ struct HopcroftKarp {
 
 \subsection{Min-Cost Max-Flow (MCMF)}
 
-\textbf{Complexidade:} $O(E \sqrt{V})$.
+\textbf{Complexidade:} $O(e \sqrt{v})$.
 
 \begin{lstlisting}
 struct Edge {
     int to, cap, cost, flow, rev;
 };
-
 struct MCMF {
     int n;
     vector<vector<Edge>> adj;
@@ -363,7 +332,7 @@ struct MCMF {
 
 \subsection{2-SAT Solver}
 
-\textbf{Complexidade:} $O(N + M)$.
+\textbf{Complexidade:} $O(n + m)$.
 
 \begin{lstlisting}
 struct TwoSAT {
